@@ -10,6 +10,20 @@ export function isoLokaal(datum: Date): string {
   return `${jaar}-${maand}-${dag}`
 }
 
+/**
+ * Formatteert een YYYY-MM-DD als leesbare Nederlandse tekst (bijv. "ma 1 jan 2024").
+ * Zie CLAUDE.md: een doorberekende datum moet altijd als leesbare tekst te zien zijn,
+ * nooit als een kaal ogend invoerveld.
+ */
+export function formatteerDatumLeesbaar(iso: string): string {
+  return new Intl.DateTimeFormat('nl-NL', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(parseIsoLokaal(iso))
+}
+
 /** Parseert een YYYY-MM-DD string naar een lokale Date (middernacht lokale tijd). */
 export function parseIsoLokaal(iso: string): Date {
   const [jaar, maand, dag] = iso.split('-').map(Number)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { eerstvolgendeWerkdag, isoLokaal, parseIsoLokaal, voegWerkdagenToe } from './werkdagen'
+import { eerstvolgendeWerkdag, formatteerDatumLeesbaar, isoLokaal, parseIsoLokaal, voegWerkdagenToe } from './werkdagen'
 
 // Vaste kalender-ankers, onafhankelijk van "vandaag": 2024-01-01 is een maandag.
 const MAANDAG = new Date(2024, 0, 1)
@@ -17,6 +17,15 @@ describe('isoLokaal', () => {
   it('rondt correct terug via parseIsoLokaal, ook over een jaargrens', () => {
     expect(isoLokaal(parseIsoLokaal('2024-03-15'))).toBe('2024-03-15')
     expect(isoLokaal(parseIsoLokaal('2023-12-31'))).toBe('2023-12-31')
+  })
+})
+
+describe('formatteerDatumLeesbaar', () => {
+  it('geeft leesbare tekst terug, niet de kale ISO-string', () => {
+    const tekst = formatteerDatumLeesbaar('2024-01-01')
+    expect(tekst).not.toBe('2024-01-01')
+    expect(tekst).toContain('2024')
+    expect(tekst.toLowerCase()).toContain('jan')
   })
 })
 
