@@ -39,6 +39,8 @@ export interface GeplandeSub {
   vast: boolean
   ankerBron?: AnkerBron
   gelijkMetSubId?: string // gezet wanneer deze stap via Laag 3 gekoppeld is
+  /** True als deze gekoppelde stap langer duurt dan zijn koppel-stap en zo zelf bepalend wordt voor zijn opvolger. */
+  wordtBepalendeFactor?: boolean
   kosten: number
 }
 
@@ -61,4 +63,6 @@ export interface Verbouwing {
   parallelKoppelingen: ParallelKoppelingen
   // aangepaste duur/wachttijd/kosten per sub, alleen voor deze verbouwing
   overrides: Record<string, SubOverride>
+  // false = concept (net aangemaakt/nog in bewerking); true = geaccordeerd, de actieve planning van de woning
+  geaccordeerd: boolean
 }

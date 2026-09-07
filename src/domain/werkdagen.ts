@@ -30,6 +30,18 @@ export function parseIsoLokaal(iso: string): Date {
   return new Date(jaar, maand - 1, dag)
 }
 
+/**
+ * Aantal kalenderdagen tussen twee lokale datums (kan negatief zijn). Gebruikt voor de
+ * Gantt-tijdlijn (pixels per dag). Rekent via UTC-middernacht van de kalenderdatum in plaats
+ * van een kaal getTime()-verschil, zodat het resultaat nooit afhangt van tijdzone- of
+ * zomertijdverschuivingen tussen de twee datums.
+ */
+export function dagenTussen(van: Date, tot: Date): number {
+  const utcVan = Date.UTC(van.getFullYear(), van.getMonth(), van.getDate())
+  const utcTot = Date.UTC(tot.getFullYear(), tot.getMonth(), tot.getDate())
+  return Math.round((utcTot - utcVan) / 86_400_000)
+}
+
 function isWeekend(datum: Date): boolean {
   const dag = datum.getDay()
   return dag === 0 || dag === 6

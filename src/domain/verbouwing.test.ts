@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { berekenPlanning } from './planner'
 import {
+  accordeer,
   effectieveBibliotheek,
   maakNieuweVerbouwing,
   verwijderAnker,
@@ -33,6 +34,17 @@ describe('maakNieuweVerbouwing', () => {
     expect(a.ankers).toEqual({})
     expect(a.parallelKoppelingen).toEqual({})
     expect(a.overrides).toEqual({})
+    expect(a.geaccordeerd).toBe(false)
+  })
+})
+
+describe('accorderen', () => {
+  it('zet geaccordeerd op true zonder de rest te wijzigen', () => {
+    const v = maakNieuweVerbouwing('Lindelaan 14', '2024-01-01', ['schilderen-uitvoeren'])
+    const geaccordeerd = accordeer(v)
+    expect(geaccordeerd.geaccordeerd).toBe(true)
+    expect(geaccordeerd.adres).toBe(v.adres)
+    expect(v.geaccordeerd).toBe(false) // origineel blijft ongewijzigd
   })
 })
 

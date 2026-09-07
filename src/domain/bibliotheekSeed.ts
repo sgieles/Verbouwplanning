@@ -5,23 +5,26 @@ import type { Thema } from './types'
 
 export const BIBLIOTHEEK_SEED: Thema[] = [
   {
+    id: 'verwijderen',
+    label: 'Vloer / keuken verwijderen',
+    groep: 'Voorbereiding',
+    volgorde: 10,
+    subs: [{ id: 'vloer-eruit', label: 'Oude vloer (en keuken) eruit', duur: 2, wachttijd: 0, kosten: 800 }],
+  },
+  {
+    // Chain-positie ná "vloer-eruit": inmeten kan er (via een koppeling in het Planning-scherm)
+    // "gelijk mee starten" in plaats van op zijn eigen wachttijd te wachten — het canonieke
+    // voorbeeld uit CLAUDE.md/BUILDPLAN.md fase 3.
     id: 'keuken',
     label: 'Keuken vervangen',
     groep: 'Voorbereiding',
-    volgorde: 10,
+    volgorde: 20,
     subs: [
       { id: 'keuken-inmeten', label: 'Inmeten', duur: 1, wachttijd: 2, kosten: 0 },
       { id: 'keuken-bestellen', label: 'Bestellen', duur: 1, wachttijd: 1, kosten: 0 },
       { id: 'keuken-levering', label: 'Levering', duur: 1, wachttijd: 20, kosten: 6000 },
       { id: 'keuken-montage', label: 'Montage', duur: 3, wachttijd: 0, kosten: 1500 },
     ],
-  },
-  {
-    id: 'verwijderen',
-    label: 'Vloer / keuken verwijderen',
-    groep: 'Voorbereiding',
-    volgorde: 20,
-    subs: [{ id: 'vloer-eruit', label: 'Oude vloer (en keuken) eruit', duur: 2, wachttijd: 0, kosten: 800 }],
   },
   {
     id: 'schilderen',

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PlanningCyclusFout, berekenPlanning } from './planner'
+import { PlanningCyclusFout, berekenPlanning, subIdsInKetenVolgorde } from './planner'
 import type { Thema } from './types'
 
 // Vaste kalender-ankers: 2024-01-01 is een maandag.
@@ -106,6 +106,60 @@ describe('berekenPlanning — Laag 3 samenspel met Laag 2', () => {
     const inmeten = planning.find((p) => p.subId === 'inmeten')!
     expect(inmeten.gelijkMetSubId).toBeUndefined()
     expect(inmeten.start).toBe('2024-01-01') // eerste in de keten, normale Laag 1-berekening
+  })
+})
+
+describe('wordtBepalendeFactor — signalering (CLAUDE.md: gekoppelde stap wordt zelf bepalend)', () => {
+  it('staat niet aan wanneer de gekoppelde stap even lang of korter duurt dan zijn koppel-stap', () => {
+    const planning = berekenPlanning({
+      bibliotheek: bibliotheekMetInmeetDuur(1),
+      geselecteerdeSubIds: ['vloer-eruit', 'inmeten', 'bestellen'],
+      vertrekdatumHuurder: '2024-01-01',
+      ankers: {},
+      parallelKoppelingen: { inmeten: 'vloer-eruit' },
+      vandaag: '2024-01-01',
+    })
+    expect(planning.find((p) => p.subId === 'inmeten')!.wordtBepalendeFactor).toBe(false)
+  })
+
+  it('staat aan wanneer de gekoppelde stap langer duurt dan zijn koppel-stap', () => {
+    const planning = berekenPlanning({
+      bibliotheek: bibliotheekMetInmeetDuur(3),
+      geselecteerdeSubIds: ['vloer-eruit', 'inmeten', 'bestellen'],
+      vertrekdatumHuurder: '2024-01-01',
+      ankers: {},
+      parallelKoppelingen: { inmeten: 'vloer-eruit' },
+      vandaag: '2024-01-01',
+    })
+    expect(planning.find((p) => p.subId === 'inmeten')!.wordtBepalendeFactor).toBe(true)
+  })
+
+  it('staat uit zodra een anker de koppeling overstemt', () => {
+    const planning = berekenPlanning({
+      bibliotheek: bibliotheekMetInmeetDuur(3),
+      geselecteerdeSubIds: ['vloer-eruit', 'inmeten', 'bestellen'],
+      vertrekdatumHuurder: '2024-01-01',
+      ankers: { inmeten: { bron: 'handmatig', datum: '2024-01-02' } },
+      parallelKoppelingen: { inmeten: 'vloer-eruit' },
+      vandaag: '2024-01-01',
+    })
+    expect(planning.find((p) => p.subId === 'inmeten')!.wordtBepalendeFactor).toBe(false)
+  })
+})
+
+describe('subIdsInKetenVolgorde', () => {
+  it('geeft geselecteerde subs terug in ketenvolgorde (thema.volgorde, dan positie in het thema)', () => {
+    const bibliotheek = bibliotheekMetInmeetDuur(1)
+    expect(subIdsInKetenVolgorde(bibliotheek, ['bestellen', 'vloer-eruit', 'inmeten'])).toEqual([
+      'vloer-eruit',
+      'inmeten',
+      'bestellen',
+    ])
+  })
+
+  it('laat niet-geselecteerde subs weg', () => {
+    const bibliotheek = bibliotheekMetInmeetDuur(1)
+    expect(subIdsInKetenVolgorde(bibliotheek, ['bestellen', 'inmeten'])).toEqual(['inmeten', 'bestellen'])
   })
 })
 

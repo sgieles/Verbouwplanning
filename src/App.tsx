@@ -2,7 +2,7 @@
 // (Overzicht, Nieuwe verbouwing, Planning, Mail verwerken, Beheer) volgt in de latere fasen.
 import { useState } from 'react'
 import { NieuweVerbouwing } from './components/NieuweVerbouwing'
-import { PlanningOverzicht } from './components/PlanningOverzicht'
+import { Planning } from './components/Planning'
 import { VerbouwingenLijst } from './components/VerbouwingenLijst'
 import { maakNieuweVerbouwing } from './domain/verbouwing'
 import { AppStateProvider, useAppState } from './state/AppStateContext'
@@ -10,7 +10,7 @@ import { AppStateProvider, useAppState } from './state/AppStateContext'
 type Weergave = { scherm: 'lijst' } | { scherm: 'nieuw' } | { scherm: 'planning'; verbouwingId: string }
 
 function AppInhoud() {
-  const { bibliotheek, verbouwingen, voegVerbouwingToe } = useAppState()
+  const { bibliotheek, verbouwingen, voegVerbouwingToe, werkVerbouwingBij } = useAppState()
   const [weergave, setWeergave] = useState<Weergave>({ scherm: 'lijst' })
 
   if (weergave.scherm === 'nieuw') {
@@ -33,10 +33,11 @@ function AppInhoud() {
       return null
     }
     return (
-      <PlanningOverzicht
+      <Planning
         verbouwing={verbouwing}
         bibliotheek={bibliotheek}
         onTerug={() => setWeergave({ scherm: 'lijst' })}
+        onWerkBij={(updater) => werkVerbouwingBij(verbouwing.id, updater)}
       />
     )
   }

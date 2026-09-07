@@ -27,19 +27,29 @@ interface SubEntry {
   chainVoorgangerId?: string
 }
 
-function bouwSubEntries(bibliotheek: Thema[], geselecteerdeSubIds: string[]): Map<string, SubEntry> {
+/** Subactiviteiten in ketenvolgorde: gesorteerd op thema.volgorde, dan op hun plek binnen het thema. */
+export function subIdsInKetenVolgorde(bibliotheek: Thema[], geselecteerdeSubIds: string[]): string[] {
   const geselecteerd = new Set(geselecteerdeSubIds)
-  const inVolgorde = [...bibliotheek]
+  return [...bibliotheek]
     .sort((a, b) => a.volgorde - b.volgorde)
-    .flatMap((thema) =>
-      thema.subs.filter((sub) => geselecteerd.has(sub.id)).map((sub) => ({ sub, themaId: thema.id })),
-    )
+    .flatMap((thema) => thema.subs.filter((sub) => geselecteerd.has(sub.id)).map((sub) => sub.id))
+}
+
+function bouwSubEntries(bibliotheek: Thema[], geselecteerdeSubIds: string[]): Map<string, SubEntry> {
+  const subsById = new Map<string, { sub: Sub; themaId: string }>()
+  for (const thema of bibliotheek) {
+    for (const sub of thema.subs) {
+      subsById.set(sub.id, { sub, themaId: thema.id })
+    }
+  }
 
   const entries = new Map<string, SubEntry>()
   let vorigeId: string | undefined
-  for (const { sub, themaId } of inVolgorde) {
-    entries.set(sub.id, { sub, themaId, chainVoorgangerId: vorigeId })
-    vorigeId = sub.id
+  for (const subId of subIdsInKetenVolgorde(bibliotheek, geselecteerdeSubIds)) {
+    const gevonden = subsById.get(subId)
+    if (!gevonden) continue
+    entries.set(subId, { sub: gevonden.sub, themaId: gevonden.themaId, chainVoorgangerId: vorigeId })
+    vorigeId = subId
   }
   return entries
 }
@@ -115,6 +125,12 @@ export function berekenPlanning(invoer: PlanningInvoer): GeplandeSub[] {
       ankerBron = 'verleden'
     }
 
+    // Signalering (CLAUDE.md Laag 3): duurt de gekoppelde stap langer dan de stap waarmee hij
+    // meeloopt, dan wordt hij zelf de bepalende factor voor zijn opvolger — dat mag de gebruiker zien.
+    const gelijkMetEind = gelijkMetTarget ? opgelost.get(gelijkMetTarget)?.eind : undefined
+    const wordtBepalendeFactor =
+      !anker && gelijkMetEind !== undefined && eind.getTime() > gelijkMetEind.getTime()
+
     resultaat.push({
       subId,
       themaId: entry.themaId,
@@ -124,6 +140,7 @@ export function berekenPlanning(invoer: PlanningInvoer): GeplandeSub[] {
       vast: Boolean(anker) || inHetVerleden,
       ankerBron,
       gelijkMetSubId: gelijkMetTarget,
+      wordtBepalendeFactor,
       kosten: entry.sub.kosten,
     })
   }

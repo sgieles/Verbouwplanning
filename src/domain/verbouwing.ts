@@ -23,7 +23,13 @@ export function maakNieuweVerbouwing(
     ankers: {},
     parallelKoppelingen: {},
     overrides: {},
+    geaccordeerd: false,
   }
+}
+
+/** Maakt de planning de actieve planning van de woning (CLAUDE.md, scherm Planning). */
+export function accordeer(verbouwing: Verbouwing): Verbouwing {
+  return { ...verbouwing, geaccordeerd: true }
 }
 
 export function zetAnker(verbouwing: Verbouwing, subId: string, anker: Anker): Verbouwing {

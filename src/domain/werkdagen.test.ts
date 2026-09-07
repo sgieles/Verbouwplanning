@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { eerstvolgendeWerkdag, formatteerDatumLeesbaar, isoLokaal, parseIsoLokaal, voegWerkdagenToe } from './werkdagen'
+import {
+  dagenTussen,
+  eerstvolgendeWerkdag,
+  formatteerDatumLeesbaar,
+  isoLokaal,
+  parseIsoLokaal,
+  voegWerkdagenToe,
+} from './werkdagen'
 
 // Vaste kalender-ankers, onafhankelijk van "vandaag": 2024-01-01 is een maandag.
 const MAANDAG = new Date(2024, 0, 1)
@@ -26,6 +33,23 @@ describe('formatteerDatumLeesbaar', () => {
     expect(tekst).not.toBe('2024-01-01')
     expect(tekst).toContain('2024')
     expect(tekst.toLowerCase()).toContain('jan')
+  })
+})
+
+describe('dagenTussen', () => {
+  it('telt kalenderdagen (dus inclusief weekend), niet werkdagen', () => {
+    expect(dagenTussen(MAANDAG, VRIJDAG)).toBe(4)
+    expect(dagenTussen(VRIJDAG, new Date(2024, 0, 8))).toBe(3) // vr -> ma, incl. weekend
+  })
+
+  it('geeft 0 voor dezelfde dag en kan negatief zijn', () => {
+    expect(dagenTussen(MAANDAG, MAANDAG)).toBe(0)
+    expect(dagenTussen(VRIJDAG, MAANDAG)).toBe(-4)
+  })
+
+  it('blijft correct over de voorjaars-DST-overgang heen (laatste zondag van maart)', () => {
+    // 2024: DST-overgang in NL is in het weekend van 30/31 maart.
+    expect(dagenTussen(new Date(2024, 2, 29), new Date(2024, 3, 1))).toBe(3)
   })
 })
 
