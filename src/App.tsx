@@ -1,8 +1,9 @@
-// Tijdelijke navigatie-shell: een echt scherm-framework met de vijf schermen uit CLAUDE.md
-// (Overzicht, Nieuwe verbouwing, Planning, Mail verwerken, Beheer) volgt in de latere fasen.
-// Mail verwerken (fase 9) staat nog niet in de navigatie.
+// Navigatie-shell rond de vijf schermen uit CLAUDE.md: Overzicht, Nieuwe verbouwing, Planning,
+// Mail verwerken en Beheer. Alle fasen (0 t/m 9) uit BUILDPLAN.md staan; fase 10 (leren uit
+// historie) is een "later"-punt en zit hier nog niet in.
 import { useState } from 'react'
 import { Beheer } from './components/Beheer'
+import { MailVerwerken } from './components/MailVerwerken'
 import { NieuweVerbouwing } from './components/NieuweVerbouwing'
 import { Overzicht } from './components/Overzicht'
 import { Planning } from './components/Planning'
@@ -13,12 +14,17 @@ type Weergave =
   | { scherm: 'overzicht' }
   | { scherm: 'nieuw' }
   | { scherm: 'planning'; verbouwingId: string }
+  | { scherm: 'mail' }
   | { scherm: 'beheer' }
 
-function Nav({ actief, onKies }: { actief: 'overzicht' | 'beheer' | null; onKies: (scherm: 'overzicht' | 'beheer') => void }) {
+type NavScherm = 'overzicht' | 'mail' | 'beheer'
+const NAV_SCHERMEN: NavScherm[] = ['overzicht', 'mail', 'beheer']
+const NAV_LABEL: Record<NavScherm, string> = { overzicht: 'overzicht', mail: 'mail verwerken', beheer: 'beheer' }
+
+function Nav({ actief, onKies }: { actief: NavScherm | null; onKies: (scherm: NavScherm) => void }) {
   return (
     <nav style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-      {(['overzicht', 'beheer'] as const).map((scherm) => (
+      {NAV_SCHERMEN.map((scherm) => (
         <button
           key={scherm}
           type="button"
@@ -35,7 +41,7 @@ function Nav({ actief, onKies }: { actief: 'overzicht' | 'beheer' | null; onKies
             textTransform: 'capitalize',
           }}
         >
-          {scherm}
+          {NAV_LABEL[scherm]}
         </button>
       ))}
     </nav>
@@ -46,7 +52,10 @@ function AppInhoud() {
   const { bibliotheek, verbouwingen, voegVerbouwingToe, werkVerbouwingBij, werkBibliotheekBij } = useAppState()
   const [weergave, setWeergave] = useState<Weergave>({ scherm: 'overzicht' })
 
-  const navActief = weergave.scherm === 'beheer' ? 'beheer' : weergave.scherm === 'overzicht' ? 'overzicht' : null
+  const navActief: NavScherm | null =
+    weergave.scherm === 'beheer' || weergave.scherm === 'mail' || weergave.scherm === 'overzicht'
+      ? weergave.scherm
+      : null
 
   let inhoud: React.ReactNode
   if (weergave.scherm === 'nieuw') {
@@ -75,6 +84,8 @@ function AppInhoud() {
         />
       )
     }
+  } else if (weergave.scherm === 'mail') {
+    inhoud = <MailVerwerken bibliotheek={bibliotheek} verbouwingen={verbouwingen} onWerkBij={werkVerbouwingBij} />
   } else if (weergave.scherm === 'beheer') {
     inhoud = <Beheer bibliotheek={bibliotheek} verbouwingen={verbouwingen} onWerkBij={werkBibliotheekBij} />
   } else {

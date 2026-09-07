@@ -50,6 +50,13 @@ function stapRij(label: string): HTMLElement {
   return strong.closest('div')!.parentElement!.parentElement!
 }
 
+// De <option>-value is verbouwing.id (niet het adres); kies via de zichtbare optietekst.
+function kiesWoning(adres: string) {
+  const select = screen.getByLabelText('Woning') as HTMLSelectElement
+  const waarde = within(select).getByText(adres).closest('option')!.getAttribute('value')!
+  fireEvent.change(select, { target: { value: waarde } })
+}
+
 function maakVerbouwingAan(adres: string) {
   fireEvent.click(screen.getByRole('button', { name: '+ Nieuwe verbouwing' }))
   fireEvent.change(screen.getByLabelText('Adres'), { target: { value: adres } })
@@ -196,5 +203,48 @@ describe('App — integratiepad fase 8 (Beheer)', () => {
     expect(within(inmetenRij).getByText(/lopende verbouwing/)).toBeInTheDocument()
     fireEvent.click(within(inmetenRij).getByRole('button', { name: 'Ja, bibliotheek aanpassen' }))
     expect(within(inmetenRij).getByText(/3d/)).toBeInTheDocument()
+  })
+})
+
+describe('App — integratiepad fase 9 (Mail verwerken)', () => {
+  it('een geplakte mail leidt tot een goed te keuren voorstel dat na goedkeuring een 🔒-anker zet', () => {
+    render(<App />)
+    maakVerbouwingAan('Lindelaan 14')
+    fireEvent.click(screen.getByRole('button', { name: '← Terug' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'mail verwerken' }))
+    kiesWoning('Lindelaan 14')
+    fireEvent.change(screen.getByLabelText('Mailtekst'), {
+      target: { value: 'Beste, we kunnen Inmeten inplannen op 15 maart 2024. Met vriendelijke groet.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Analyseer' }))
+
+    expect(screen.getByLabelText('Activiteit')).toHaveValue('keuken-inmeten')
+    expect(screen.getByLabelText('Toegezegde datum')).toHaveValue('2024-03-15')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Goedkeuren' }))
+    expect(screen.getByText('✓ Voorstel goedgekeurd en verwerkt in de planning')).toBeInTheDocument()
+
+    // Controleer in Planning dat Inmeten nu een 🔒-anker heeft op de toegezegde datum.
+    fireEvent.click(screen.getByRole('button', { name: 'overzicht' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Bekijk planning' }))
+    const inmetenRij = stapRij('Inmeten')
+    expect(within(inmetenRij).getByText('🔒')).toBeInTheDocument()
+    expect(within(inmetenRij).getByText(/15 mrt 2024|15 maart 2024/)).toBeInTheDocument()
+  })
+
+  it('negeren laat de planning ongemoeid', () => {
+    render(<App />)
+    maakVerbouwingAan('Lindelaan 14')
+    fireEvent.click(screen.getByRole('button', { name: '← Terug' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'mail verwerken' }))
+    kiesWoning('Lindelaan 14')
+    fireEvent.change(screen.getByLabelText('Mailtekst'), { target: { value: 'Inmeten kan op 15 maart 2024.' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Analyseer' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Negeren' }))
+
+    expect(screen.queryByLabelText('Activiteit')).not.toBeInTheDocument()
+    expect(screen.queryByText('✓ Voorstel goedgekeurd en verwerkt in de planning')).not.toBeInTheDocument()
   })
 })
