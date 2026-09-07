@@ -2,16 +2,16 @@
 // (Overzicht, Nieuwe verbouwing, Planning, Mail verwerken, Beheer) volgt in de latere fasen.
 import { useState } from 'react'
 import { NieuweVerbouwing } from './components/NieuweVerbouwing'
+import { Overzicht } from './components/Overzicht'
 import { Planning } from './components/Planning'
-import { VerbouwingenLijst } from './components/VerbouwingenLijst'
 import { maakNieuweVerbouwing } from './domain/verbouwing'
 import { AppStateProvider, useAppState } from './state/AppStateContext'
 
-type Weergave = { scherm: 'lijst' } | { scherm: 'nieuw' } | { scherm: 'planning'; verbouwingId: string }
+type Weergave = { scherm: 'overzicht' } | { scherm: 'nieuw' } | { scherm: 'planning'; verbouwingId: string }
 
 function AppInhoud() {
   const { bibliotheek, verbouwingen, voegVerbouwingToe, werkVerbouwingBij } = useAppState()
-  const [weergave, setWeergave] = useState<Weergave>({ scherm: 'lijst' })
+  const [weergave, setWeergave] = useState<Weergave>({ scherm: 'overzicht' })
 
   if (weergave.scherm === 'nieuw') {
     return (
@@ -29,21 +29,21 @@ function AppInhoud() {
   if (weergave.scherm === 'planning') {
     const verbouwing = verbouwingen.find((v) => v.id === weergave.verbouwingId)
     if (!verbouwing) {
-      setWeergave({ scherm: 'lijst' })
+      setWeergave({ scherm: 'overzicht' })
       return null
     }
     return (
       <Planning
         verbouwing={verbouwing}
         bibliotheek={bibliotheek}
-        onTerug={() => setWeergave({ scherm: 'lijst' })}
+        onTerug={() => setWeergave({ scherm: 'overzicht' })}
         onWerkBij={(updater) => werkVerbouwingBij(verbouwing.id, updater)}
       />
     )
   }
 
   return (
-    <VerbouwingenLijst
+    <Overzicht
       verbouwingen={verbouwingen}
       bibliotheek={bibliotheek}
       onNieuw={() => setWeergave({ scherm: 'nieuw' })}

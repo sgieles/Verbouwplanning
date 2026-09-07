@@ -6,8 +6,10 @@ import {
   accordeer,
   effectieveBibliotheek,
   verwijderAnker,
+  verwijderBenaderdOp,
   verwijderKoppeling,
   zetAnker,
+  zetBenaderdOp,
   zetKoppeling,
   zetOverride,
 } from '../domain/verbouwing'
@@ -138,11 +140,14 @@ export function Planning({ verbouwing, bibliotheek, onTerug, onWerkBij }: Props)
                       stap={stap}
                       effectieveSub={effectieveSub}
                       koppelOpties={koppelOpties}
+                      benaderdOp={verbouwing.benaderdOp[stap.subId]}
                       onZetAnker={(bron, datum) => onWerkBij((v) => zetAnker(v, stap.subId, { bron, datum }))}
                       onVerwijderAnker={() => onWerkBij((v) => verwijderAnker(v, stap.subId))}
                       onZetDuur={(duur) => onWerkBij((v) => zetOverride(v, stap.subId, { duur }))}
                       onZetKoppeling={(gelijkMetSubId) => onWerkBij((v) => zetKoppeling(v, stap.subId, gelijkMetSubId))}
                       onVerwijderKoppeling={() => onWerkBij((v) => verwijderKoppeling(v, stap.subId))}
+                      onZetBenaderdOp={(datum) => onWerkBij((v) => zetBenaderdOp(v, stap.subId, datum))}
+                      onVerwijderBenaderdOp={() => onWerkBij((v) => verwijderBenaderdOp(v, stap.subId))}
                     />
                   </div>
                 </div>

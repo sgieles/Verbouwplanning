@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
+import { isoLokaal } from './domain/werkdagen'
 
 beforeEach(() => {
   localStorage.clear()
@@ -25,9 +26,9 @@ describe('App — integratiepad fase 5', () => {
     // Elke stap heeft een uitklapbare bewerk-actie (fase 6).
     expect(screen.getAllByRole('button', { name: /Bewerken/ }).length).toBeGreaterThan(0)
 
-    // Terug naar de lijst: de verbouwing staat er nu in met een berekende oplevering.
+    // Terug naar het overzicht: de verbouwing staat er nu in met een berekende oplevering.
     fireEvent.click(screen.getByRole('button', { name: '← Terug' }))
-    expect(screen.getByText('Lindelaan 14')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText('Lindelaan 14')).toBeInTheDocument()
     expect(screen.queryByText('Nog geen verbouwingen aangemaakt.')).not.toBeInTheDocument()
   })
 
@@ -39,7 +40,7 @@ describe('App — integratiepad fase 5', () => {
     unmount()
 
     render(<App />)
-    expect(screen.getByText('Kerkstraat 3')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText('Kerkstraat 3')).toBeInTheDocument()
   })
 })
 
@@ -97,5 +98,41 @@ describe('App — integratiepad fase 6 (Planning-scherm bedienen)', () => {
 
     expect(screen.getByText('✓ vastgezet')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Planning is vastgezet' })).toBeDisabled()
+  })
+})
+
+describe('App — integratiepad fase 7 (Overzicht met wachttijd-bewaking)', () => {
+  it('een net aangemaakte verbouwing (vertrekdatum in het verleden, dus geklemd op vandaag) toont een signaal in "Vandaag te doen"', () => {
+    render(<App />)
+    // maakVerbouwingAan gebruikt vertrekdatum 2024-01-01 — geklemd op vandaag, dus de eerste
+    // stappen zijn per definitie onbevestigd én naderend.
+    maakVerbouwingAan('Lindelaan 14')
+    fireEvent.click(screen.getByRole('button', { name: '← Terug' }))
+
+    expect(screen.getByText('Vandaag te doen')).toBeInTheDocument()
+    expect(screen.getAllByText(/nog niet bevestigd/).length).toBeGreaterThan(0)
+    // Statusmarkering in de tabel wijkt af van "op schema".
+    expect(within(screen.getByRole('table')).getByText(/wacht op reactie/)).toBeInTheDocument()
+  })
+
+  it('een partij die te lang niet reageert (📞 benaderd, 6 dagen geleden) verschijnt als "wacht op reactie"', () => {
+    render(<App />)
+    maakVerbouwingAan('Lindelaan 14')
+
+    const zesDagenGeleden = isoLokaal(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000))
+    const rij = stapRij('Inmeten')
+    fireEvent.click(within(rij).getByRole('button', { name: /Bewerken/ }))
+    fireEvent.change(within(rij).getByLabelText('Benaderd op'), { target: { value: zesDagenGeleden } })
+    fireEvent.click(within(rij).getByRole('button', { name: 'Markeer benaderd' }))
+
+    fireEvent.click(screen.getByRole('button', { name: '← Terug' }))
+    expect(screen.getByText(/geen reactie/)).toBeInTheDocument()
+  })
+
+  it('toont "Overzicht" als titel en de lege-staat tekst zonder verbouwingen', () => {
+    render(<App />)
+    expect(screen.getByRole('heading', { name: 'Overzicht' })).toBeInTheDocument()
+    expect(screen.getByText('Nog geen verbouwingen aangemaakt.')).toBeInTheDocument()
+    expect(screen.queryByText('Vandaag te doen')).not.toBeInTheDocument()
   })
 })

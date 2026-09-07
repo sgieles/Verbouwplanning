@@ -5,9 +5,11 @@ import {
   effectieveBibliotheek,
   maakNieuweVerbouwing,
   verwijderAnker,
+  verwijderBenaderdOp,
   verwijderKoppeling,
   verwijderOverride,
   zetAnker,
+  zetBenaderdOp,
   zetKoppeling,
   zetOverride,
 } from './verbouwing'
@@ -35,6 +37,19 @@ describe('maakNieuweVerbouwing', () => {
     expect(a.parallelKoppelingen).toEqual({})
     expect(a.overrides).toEqual({})
     expect(a.geaccordeerd).toBe(false)
+    expect(a.benaderdOp).toEqual({})
+  })
+})
+
+describe('benaderdOp zetten en verwijderen', () => {
+  it('zetBenaderdOp en verwijderBenaderdOp werken immutable en onafhankelijk van ankers', () => {
+    const v = maakNieuweVerbouwing('Lindelaan 14', '2024-01-01', ['schilderen-uitvoeren'])
+    const benaderd = zetBenaderdOp(v, 'schilderen-uitvoeren', '2024-01-05')
+    expect(v.benaderdOp).toEqual({}) // origineel ongewijzigd
+    expect(benaderd.benaderdOp).toEqual({ 'schilderen-uitvoeren': '2024-01-05' })
+    expect(benaderd.ankers).toEqual({}) // geen anker gezet
+
+    expect(verwijderBenaderdOp(benaderd, 'schilderen-uitvoeren').benaderdOp).toEqual({})
   })
 })
 

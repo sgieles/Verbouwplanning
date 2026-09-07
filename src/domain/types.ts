@@ -65,4 +65,7 @@ export interface Verbouwing {
   overrides: Record<string, SubOverride>
   // false = concept (net aangemaakt/nog in bewerking); true = geaccordeerd, de actieve planning van de woning
   geaccordeerd: boolean
+  // datum waarop een partij benaderd is voor deze sub (isoLokaal) — voor wachttijd-bewaking (fase 7).
+  // Onafhankelijk van ankers: je kunt benaderd hebben zonder dat er al een toegezegde datum is.
+  benaderdOp: Record<string, string>
 }

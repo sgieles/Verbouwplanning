@@ -2,33 +2,41 @@
 // koppelen (Laag 3). Uitgeklapt vanuit Planning.tsx, ingeklapt om de tijdlijn rustig te houden.
 import { useState } from 'react'
 import type { GeplandeSub, Sub } from '../domain/types'
+import { formatteerDatumLeesbaar, isoLokaal } from '../domain/werkdagen'
 
 interface Props {
   stap: GeplandeSub
   effectieveSub: Sub
   koppelOpties: { id: string; label: string }[]
+  benaderdOp?: string
   onZetAnker: (bron: 'handmatig' | 'bevestigd', datum: string) => void
   onVerwijderAnker: () => void
   onZetDuur: (duur: number) => void
   onZetKoppeling: (gelijkMetSubId: string) => void
   onVerwijderKoppeling: () => void
+  onZetBenaderdOp: (datum: string) => void
+  onVerwijderBenaderdOp: () => void
 }
 
 export function StapActies({
   stap,
   effectieveSub,
   koppelOpties,
+  benaderdOp,
   onZetAnker,
   onVerwijderAnker,
   onZetDuur,
   onZetKoppeling,
   onVerwijderKoppeling,
+  onZetBenaderdOp,
+  onVerwijderBenaderdOp,
 }: Props) {
   const [opengeklapt, setOpengeklapt] = useState(false)
   const [startdatumVeld, setStartdatumVeld] = useState(stap.start)
   const [bevestigdatumVeld, setBevestigdatumVeld] = useState(stap.start)
   const [duurVeld, setDuurVeld] = useState(String(effectieveSub.duur))
   const [koppelVeld, setKoppelVeld] = useState(stap.gelijkMetSubId ?? '')
+  const [benaderdVeld, setBenaderdVeld] = useState(() => benaderdOp ?? isoLokaal(new Date()))
 
   // Harde regel (CLAUDE.md): verstreken stappen staan vast en tonen geen bewerkacties.
   if (stap.ankerBron === 'verleden') {
@@ -87,6 +95,27 @@ export function StapActies({
               <button type="button" className="knop-subtiel" onClick={onVerwijderAnker}>
                 Maak los
               </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 150 }}>📞 Benaderd op</span>
+            <input
+              type="date"
+              aria-label="Benaderd op"
+              value={benaderdVeld}
+              onChange={(e) => setBenaderdVeld(e.target.value)}
+            />
+            <button type="button" className="knop-subtiel" onClick={() => onZetBenaderdOp(benaderdVeld)}>
+              Markeer benaderd
+            </button>
+            {benaderdOp && (
+              <>
+                <span className="tekst-muted">sinds {formatteerDatumLeesbaar(benaderdOp)}</span>
+                <button type="button" className="knop-subtiel" onClick={onVerwijderBenaderdOp}>
+                  Wis
+                </button>
+              </>
             )}
           </div>
 

@@ -24,6 +24,7 @@ export function maakNieuweVerbouwing(
     parallelKoppelingen: {},
     overrides: {},
     geaccordeerd: false,
+    benaderdOp: {},
   }
 }
 
@@ -67,6 +68,16 @@ export function zetOverride(verbouwing: Verbouwing, subId: string, override: Sub
 export function verwijderOverride(verbouwing: Verbouwing, subId: string): Verbouwing {
   const { [subId]: _verwijderd, ...rest } = verbouwing.overrides
   return { ...verbouwing, overrides: rest }
+}
+
+/** Markeert dat een partij benaderd is voor deze sub (fase 7: wachttijd-bewaking). Onafhankelijk van ankers. */
+export function zetBenaderdOp(verbouwing: Verbouwing, subId: string, datum: string): Verbouwing {
+  return { ...verbouwing, benaderdOp: { ...verbouwing.benaderdOp, [subId]: datum } }
+}
+
+export function verwijderBenaderdOp(verbouwing: Verbouwing, subId: string): Verbouwing {
+  const { [subId]: _verwijderd, ...rest } = verbouwing.benaderdOp
+  return { ...verbouwing, benaderdOp: rest }
 }
 
 /**
