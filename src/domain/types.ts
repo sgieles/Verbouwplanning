@@ -42,6 +42,14 @@ export interface GeplandeSub {
   kosten: number
 }
 
+/** Per-verbouwing aanpassing van een bibliotheek-waarde (bijv. deze schilder rekent meer dagen).
+ *  Verandert alleen déze verbouwing — de bibliotheek zelf blijft ongemoeid. */
+export interface SubOverride {
+  duur?: number
+  wachttijd?: number
+  kosten?: number
+}
+
 export interface Verbouwing {
   id: string
   adres: string
@@ -51,4 +59,6 @@ export interface Verbouwing {
   ankers: Record<string, Anker>
   // "start gelijk met" per verbouwing (Laag 3) — geen bibliotheek-eigenschap
   parallelKoppelingen: ParallelKoppelingen
+  // aangepaste duur/wachttijd/kosten per sub, alleen voor deze verbouwing
+  overrides: Record<string, SubOverride>
 }
