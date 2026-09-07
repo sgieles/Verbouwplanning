@@ -22,8 +22,8 @@ interface Props {
   vanaf: string // isoLokaal — linkerrand van de tijdlijn
   totEnMet: string // isoLokaal — rechterrand van de tijdlijn
   labelVoorSub: (subId: string) => string
-  /** subId's waarvan het bewerkpaneel nu openstaat — voor de "actief"-markering op de rij. */
-  opengeklapt: Set<string>
+  /** subId waarvan het zijpaneel nu openstaat — voor de "actief"-markering op de rij. */
+  geselecteerdeSubId: string | null
   onKlikStap: (subId: string) => void
 }
 
@@ -61,7 +61,7 @@ function MaandKoppen({ vanaf, totEnMet }: { vanaf: Date; totEnMet: Date }) {
   )
 }
 
-export function GanttTijdlijn({ themasMetStappen, vanaf, totEnMet, labelVoorSub, opengeklapt, onKlikStap }: Props) {
+export function GanttTijdlijn({ themasMetStappen, vanaf, totEnMet, labelVoorSub, geselecteerdeSubId, onKlikStap }: Props) {
   const vanafDatum = parseIsoLokaal(vanaf)
   const totEnMetDatum = parseIsoLokaal(totEnMet)
   const dagenSpan = Math.min(Math.max(dagenTussen(vanafDatum, totEnMetDatum) + 1, 1), MAX_DAGEN_BREEDTE)
@@ -91,7 +91,7 @@ export function GanttTijdlijn({ themasMetStappen, vanaf, totEnMet, labelVoorSub,
               <button
                 key={stap.subId}
                 type="button"
-                className={opengeklapt.has(stap.subId) ? 'gantt-rij actief' : 'gantt-rij'}
+                className={geselecteerdeSubId === stap.subId ? 'gantt-rij actief' : 'gantt-rij'}
                 onClick={() => onKlikStap(stap.subId)}
                 style={{
                   height: 28,
@@ -163,7 +163,7 @@ export function GanttTijdlijn({ themasMetStappen, vanaf, totEnMet, labelVoorSub,
                     <button
                       key={stap.subId}
                       type="button"
-                      className={opengeklapt.has(stap.subId) ? 'gantt-rij actief' : 'gantt-rij'}
+                      className={geselecteerdeSubId === stap.subId ? 'gantt-rij actief' : 'gantt-rij'}
                       onClick={() => onKlikStap(stap.subId)}
                       style={{ height: 28, position: 'relative', borderBottom: '1px solid var(--border)' }}
                     >

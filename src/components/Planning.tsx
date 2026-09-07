@@ -1,6 +1,8 @@
 // Fase 6 — het zwaartepunt van de app: de tijdlijn tonen én alle drie de lagen bedienen
 // (📌/🔒 zetten, duur bijstellen, "start gelijk met" koppelen) en de planning accorderen.
-import { useRef, useState } from 'react'
+// Klikken op een subactiviteit in de Gantt opent een zijpaneel (links) met de bedienvelden
+// ervoor — er is geen aparte lijst met dezelfde informatie meer onder de tijdlijn.
+import { useState } from 'react'
 import { berekenPlanning, opleverdatum, subIdsInKetenVolgorde, totaleKosten } from '../domain/planner'
 import type { Sub, Thema, Verbouwing } from '../domain/types'
 import {
@@ -36,25 +38,12 @@ export function Planning({ verbouwing, bibliotheek, onTerug, onWerkBij }: Props)
   const subsById = new Map<string, Sub>(effectief.flatMap((thema) => thema.subs.map((sub) => [sub.id, sub])))
   const vandaag = isoLokaal(new Date())
 
-  // Eén gedeelde open/dicht-state: een klik op de Gantt-rij en de "Bewerken"-knop in de lijst
-  // eronder sturen hetzelfde paneel aan, zodat je vanuit de tijdlijn zelf kunt bewerken.
-  const [opengeklapt, setOpengeklapt] = useState<Set<string>>(new Set())
-  const rijRefs = useRef(new Map<string, HTMLDivElement>())
+  // Eén geselecteerde subactiviteit tegelijk: een klik op de Gantt-rij (nogmaals) opent of
+  // sluit het zijpaneel met de bedienvelden ervoor.
+  const [geselecteerdeSubId, setGeselecteerdeSubId] = useState<string | null>(null)
 
-  function toggleStap(subId: string) {
-    setOpengeklapt((vorige) => {
-      const nieuw = new Set(vorige)
-      if (nieuw.has(subId)) {
-        nieuw.delete(subId)
-      } else {
-        nieuw.add(subId)
-        // Scroll de bijbehorende rij in de lijst in beeld — die kan onder de Gantt uit beeld staan.
-        requestAnimationFrame(() => {
-          rijRefs.current.get(subId)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        })
-      }
-      return nieuw
-    })
+  function klikStap(subId: string) {
+    setGeselecteerdeSubId((vorige) => (vorige === subId ? null : subId))
   }
 
   const planning = berekenPlanning({
@@ -75,6 +64,12 @@ export function Planning({ verbouwing, bibliotheek, onTerug, onWerkBij }: Props)
   function labelVoorSub(subId: string): string {
     return planning.find((p) => p.subId === subId)?.label ?? subId
   }
+
+  const geselecteerdeStap = geselecteerdeSubId ? planning.find((p) => p.subId === geselecteerdeSubId) : undefined
+  const geselecteerdeSub = geselecteerdeSubId ? subsById.get(geselecteerdeSubId) : undefined
+  const koppelOptiesVoorSelectie = geselecteerdeSubId
+    ? ketenVolgorde.slice(0, ketenVolgorde.indexOf(geselecteerdeSubId)).map((id) => ({ id, label: labelVoorSub(id) }))
+    : []
 
   return (
     <div className="kaart" style={{ maxWidth: 980 }}>
@@ -109,93 +104,76 @@ export function Planning({ verbouwing, bibliotheek, onTerug, onWerkBij }: Props)
       </div>
 
       {planning.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <GanttTijdlijn
-            themasMetStappen={themasMetStappen}
-            // Gebaseerd op de werkelijk geplande data, niet op vertrekdatumHuurder: die kan (na
-            // een klem naar vandaag, of gewoon een oude invoer) ver vóór de planning liggen,
-            // waardoor de tijdlijn een enorme lege periode zou proberen te tekenen.
-            vanaf={planning.reduce((min, p) => (p.start < min ? p.start : min), planning[0].start)}
-            totEnMet={oplevering ?? planning[0].start}
-            labelVoorSub={labelVoorSub}
-            opengeklapt={opengeklapt}
-            onKlikStap={toggleStap}
-          />
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 24 }}>
+          {geselecteerdeStap && geselecteerdeSub && (
+            <div className="kaart" style={{ width: 280, flexShrink: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <strong>{geselecteerdeStap.label}</strong>
+                <button type="button" className="knop-subtiel" onClick={() => setGeselecteerdeSubId(null)}>
+                  Sluiten
+                </button>
+              </div>
+              <div className="tekst-muted" style={{ fontSize: 12, marginTop: 2 }}>
+                {geselecteerdeStap.ankerBron && (
+                  <span title={geselecteerdeStap.ankerBron}>{ANKER_MARKERING[geselecteerdeStap.ankerBron]} </span>
+                )}
+                {formatteerDatumLeesbaar(geselecteerdeStap.start)} – {formatteerDatumLeesbaar(geselecteerdeStap.eind)}
+              </div>
+              {geselecteerdeStap.gelijkMetSubId && (
+                <span className="tag" style={{ marginTop: 6, display: 'inline-block' }}>
+                  gelijk met {labelVoorSub(geselecteerdeStap.gelijkMetSubId)}
+                </span>
+              )}
+              {geselecteerdeStap.wordtBepalendeFactor && (
+                <div style={{ color: 'var(--kritiek)', fontSize: 12, marginTop: 6 }}>⚠ bepaalt nu de planning</div>
+              )}
+              {geselecteerdeStap.kosten > 0 && (
+                <div className="tekst-muted" style={{ fontSize: 12, marginTop: 6 }}>
+                  €{geselecteerdeStap.kosten.toLocaleString('nl-NL')}
+                </div>
+              )}
+
+              <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '10px 0' }} />
+
+              <StapActies
+                // Zonder key blijft dit hetzelfde React-exemplaar bij het wisselen van
+                // selectie (zelfde positie in de boom) en blijven de veldwaarden van de
+                // vórige stap staan. De key dwingt een vers exemplaar af per subactiviteit.
+                key={geselecteerdeStap.subId}
+                stap={geselecteerdeStap}
+                effectieveSub={geselecteerdeSub}
+                koppelOpties={koppelOptiesVoorSelectie}
+                benaderdOp={verbouwing.benaderdOp[geselecteerdeStap.subId]}
+                onZetAnker={(bron, datum) => onWerkBij((v) => zetAnker(v, geselecteerdeStap.subId, { bron, datum }))}
+                onVerwijderAnker={() => onWerkBij((v) => verwijderAnker(v, geselecteerdeStap.subId))}
+                onZetDuur={(duur) => onWerkBij((v) => zetOverride(v, geselecteerdeStap.subId, { duur }))}
+                onZetKoppeling={(gelijkMetSubId) =>
+                  onWerkBij((v) => zetKoppeling(v, geselecteerdeStap.subId, gelijkMetSubId))
+                }
+                onVerwijderKoppeling={() => onWerkBij((v) => verwijderKoppeling(v, geselecteerdeStap.subId))}
+                onZetBenaderdOp={(datum) => onWerkBij((v) => zetBenaderdOp(v, geselecteerdeStap.subId, datum))}
+                onVerwijderBenaderdOp={() => onWerkBij((v) => verwijderBenaderdOp(v, geselecteerdeStap.subId))}
+              />
+            </div>
+          )}
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <GanttTijdlijn
+              themasMetStappen={themasMetStappen}
+              // Gebaseerd op de werkelijk geplande data, niet op vertrekdatumHuurder: die kan (na
+              // een klem naar vandaag, of gewoon een oude invoer) ver vóór de planning liggen,
+              // waardoor de tijdlijn een enorme lege periode zou proberen te tekenen.
+              vanaf={planning.reduce((min, p) => (p.start < min ? p.start : min), planning[0].start)}
+              totEnMet={oplevering ?? planning[0].start}
+              labelVoorSub={labelVoorSub}
+              geselecteerdeSubId={geselecteerdeSubId}
+              onKlikStap={klikStap}
+            />
+          </div>
         </div>
       )}
 
-      {themasMetStappen.map(({ thema, stappen }) => (
-        <div key={thema.id} style={{ marginBottom: 20 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 8 }}>{thema.label}</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {stappen.map((stap) => {
-              const effectieveSub = subsById.get(stap.subId)
-              if (!effectieveSub) return null
-              const eigenIndex = ketenVolgorde.indexOf(stap.subId)
-              const koppelOpties = ketenVolgorde
-                .slice(0, eigenIndex)
-                .map((id) => ({ id, label: labelVoorSub(id) }))
-
-              return (
-                <div
-                  key={stap.subId}
-                  ref={(el) => {
-                    if (el) rijRefs.current.set(stap.subId, el)
-                    else rijRefs.current.delete(stap.subId)
-                  }}
-                  style={{ borderBottom: '1px solid var(--border)', paddingBottom: 10 }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                    <div>
-                      <strong>{stap.label}</strong>{' '}
-                      {stap.ankerBron && <span title={stap.ankerBron}>{ANKER_MARKERING[stap.ankerBron]}</span>}{' '}
-                      <span className="tekst-muted">
-                        {formatteerDatumLeesbaar(stap.start)} – {formatteerDatumLeesbaar(stap.eind)}
-                      </span>
-                      {stap.gelijkMetSubId && (
-                        <span className="tag" style={{ marginLeft: 8 }}>
-                          gelijk met {labelVoorSub(stap.gelijkMetSubId)}
-                        </span>
-                      )}
-                      {stap.wordtBepalendeFactor && (
-                        <span style={{ marginLeft: 8, color: 'var(--kritiek)', fontSize: 13 }}>
-                          ⚠ bepaalt nu de planning
-                        </span>
-                      )}
-                    </div>
-                    <span className="tekst-muted">{stap.kosten > 0 ? `€${stap.kosten.toLocaleString('nl-NL')}` : '—'}</span>
-                  </div>
-
-                  <div style={{ marginTop: 6 }}>
-                    <StapActies
-                      stap={stap}
-                      effectieveSub={effectieveSub}
-                      koppelOpties={koppelOpties}
-                      benaderdOp={verbouwing.benaderdOp[stap.subId]}
-                      opengeklapt={opengeklapt.has(stap.subId)}
-                      onToggle={() => toggleStap(stap.subId)}
-                      onZetAnker={(bron, datum) => onWerkBij((v) => zetAnker(v, stap.subId, { bron, datum }))}
-                      onVerwijderAnker={() => onWerkBij((v) => verwijderAnker(v, stap.subId))}
-                      onZetDuur={(duur) => onWerkBij((v) => zetOverride(v, stap.subId, { duur }))}
-                      onZetKoppeling={(gelijkMetSubId) => onWerkBij((v) => zetKoppeling(v, stap.subId, gelijkMetSubId))}
-                      onVerwijderKoppeling={() => onWerkBij((v) => verwijderKoppeling(v, stap.subId))}
-                      onZetBenaderdOp={(datum) => onWerkBij((v) => zetBenaderdOp(v, stap.subId, datum))}
-                      onVerwijderBenaderdOp={() => onWerkBij((v) => verwijderBenaderdOp(v, stap.subId))}
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      ))}
-
-      <button
-        type="button"
-        className="knop"
-        disabled={verbouwing.geaccordeerd}
-        onClick={() => onWerkBij(accordeer)}
-      >
+      <button type="button" className="knop" disabled={verbouwing.geaccordeerd} onClick={() => onWerkBij(accordeer)}>
         {verbouwing.geaccordeerd ? 'Planning is vastgezet' : 'Planning vastzetten'}
       </button>
     </div>

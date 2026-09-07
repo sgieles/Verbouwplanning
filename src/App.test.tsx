@@ -23,8 +23,9 @@ describe('App — integratiepad fase 5', () => {
     // Landt op het planning-scherm met het adres als titel en minstens één doorgerekende stap.
     expect(screen.getByRole('heading', { name: 'Lindelaan 14' })).toBeInTheDocument()
     expect(screen.getByText('Verwachte oplevering').closest('div')).toBeInTheDocument()
-    // Elke stap heeft een uitklapbare bewerk-actie (fase 6).
-    expect(screen.getAllByRole('button', { name: /Bewerken/ }).length).toBeGreaterThan(0)
+    // Elke subactiviteit-rij in de Gantt is klikbaar en opent het bewerkpaneel (fase 6).
+    fireEvent.click(screen.getByTitle('Oude vloer (en keuken) eruit'))
+    expect(screen.getByLabelText('Startdatum')).toBeInTheDocument()
 
     // Terug naar het overzicht: de verbouwing staat er nu in met een berekende oplevering.
     fireEvent.click(screen.getByRole('button', { name: '← Terug' }))
@@ -44,10 +45,11 @@ describe('App — integratiepad fase 5', () => {
   })
 })
 
-function stapRij(label: string): HTMLElement {
-  const strong = screen.getByText((content, el) => el?.tagName === 'STRONG' && content === label)
-  // strong -> kleine labelwrapper -> header-rij (flex) -> buitenste stap-rij (bevat ook StapActies)
-  return strong.closest('div')!.parentElement!.parentElement!
+// De Gantt-rij (label-kolom) heeft altijd title={sub.label} op de knop zelf — een exacte,
+// ondubbelzinnige match, in tegenstelling tot de accessible name (die bij een anker-marker
+// mogelijk "🔒 Inmeten" i.p.v. "Inmeten" oplevert). Opent of sluit het zijpaneel (toggle).
+function openPaneel(label: string) {
+  fireEvent.click(screen.getByTitle(label))
 }
 
 // De <option>-value is verbouwing.id (niet het adres); kies via de zichtbare optietekst.
@@ -69,31 +71,29 @@ describe('App — integratiepad fase 6 (Planning-scherm bedienen)', () => {
     render(<App />)
     maakVerbouwingAan('Lindelaan 14')
 
-    const rij = stapRij('Inmeten')
-    fireEvent.click(within(rij).getByRole('button', { name: /Bewerken/ }))
-    fireEvent.change(within(rij).getByLabelText('Startdatum'), { target: { value: '2024-01-15' } })
-    fireEvent.click(within(rij).getByRole('button', { name: 'Zet startdatum' }))
+    openPaneel('Inmeten')
+    fireEvent.change(screen.getByLabelText('Startdatum'), { target: { value: '2024-01-15' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Zet startdatum' }))
 
-    expect(within(rij).getByText('📌')).toBeInTheDocument()
-    expect(within(rij).getByText(/15 jan 2024/)).toBeInTheDocument()
+    // 📌 en de datum staan op meerdere plekken (paneel, Gantt-rij, Gantt-thema-samenvatting).
+    expect(screen.getAllByText('📌').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/15 jan 2024/).length).toBeGreaterThan(0)
   })
 
   it('twee subs koppelen ("start gelijk met") toont het label en kan weer losgemaakt worden', () => {
     render(<App />)
     maakVerbouwingAan('Lindelaan 14')
 
-    const rij = stapRij('Inmeten')
-    fireEvent.click(within(rij).getByRole('button', { name: /Bewerken/ }))
-    fireEvent.change(within(rij).getByLabelText('Start gelijk met'), {
-      target: { value: 'vloer-eruit' },
-    })
-    fireEvent.click(within(rij).getByRole('button', { name: 'Koppel' }))
+    openPaneel('Inmeten')
+    fireEvent.change(screen.getByLabelText('Start gelijk met'), { target: { value: 'vloer-eruit' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Koppel' }))
 
     // Anker op "^gelijk met " om het statische veldlabel "Start gelijk met" niet mee te matchen.
-    expect(within(rij).getByText(/^gelijk met /)).toBeInTheDocument()
+    // De tag staat zowel in de Gantt (naast de balk) als in het zijpaneel.
+    expect(screen.getAllByText(/^gelijk met /).length).toBeGreaterThan(0)
 
-    fireEvent.click(within(rij).getByRole('button', { name: 'Ontkoppel' }))
-    expect(within(rij).queryByText(/^gelijk met /)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Ontkoppel' }))
+    expect(screen.queryAllByText(/^gelijk met /)).toHaveLength(0)
   })
 
   it('accorderen zet de planning vast en de knop kan niet nogmaals geklikt worden', () => {
@@ -107,21 +107,32 @@ describe('App — integratiepad fase 6 (Planning-scherm bedienen)', () => {
     expect(screen.getByRole('button', { name: 'Planning is vastgezet' })).toBeDisabled()
   })
 
-  it('klikken op de subactiviteit-rij in de Gantt opent hetzelfde bewerkpaneel als de lijst eronder', () => {
+  it('klikken op een subactiviteit in de Gantt opent het zijpaneel; nogmaals klikken sluit het, een andere rij wisselt de selectie', () => {
     render(<App />)
     maakVerbouwingAan('Lindelaan 14')
 
-    // De Gantt-rij (label-kolom) heeft dezelfde naam als de detaillijst-rij ("Inmeten"); de
-    // detaillijst gebruikt <strong>, de Gantt-rij is een <button> met die tekst als naam.
-    fireEvent.click(screen.getByRole('button', { name: 'Inmeten' }))
+    expect(screen.queryByLabelText('Startdatum')).not.toBeInTheDocument()
 
-    const rij = stapRij('Inmeten')
-    expect(within(rij).getByRole('button', { name: /Sluiten/ })).toBeInTheDocument()
-    expect(within(rij).getByLabelText('Startdatum')).toBeInTheDocument()
+    openPaneel('Inmeten')
+    expect(screen.getByLabelText('Startdatum')).toBeInTheDocument()
 
-    // Nogmaals klikken op de Gantt-rij sluit het paneel weer (toggle).
-    fireEvent.click(screen.getByRole('button', { name: 'Inmeten' }))
-    expect(within(rij).getByRole('button', { name: /Bewerken/ })).toBeInTheDocument()
+    openPaneel('Inmeten') // toggle: nogmaals klikken op dezelfde rij sluit het paneel
+    expect(screen.queryByLabelText('Startdatum')).not.toBeInTheDocument()
+
+    openPaneel('Bestellen') // een andere rij opent het paneel opnieuw, voor die stap
+    expect(screen.getByLabelText('Startdatum')).toBeInTheDocument()
+  })
+
+  it('wisselen van selectie ververst de veldwaarden (regressie: geen React-state van de vorige stap laten hangen)', () => {
+    render(<App />)
+    maakVerbouwingAan('Lindelaan 14')
+
+    openPaneel('Inmeten')
+    fireEvent.change(screen.getByLabelText('Start gelijk met'), { target: { value: 'vloer-eruit' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Koppel' }))
+
+    openPaneel('Bestellen') // Bestellen heeft zelf geen koppeling
+    expect(screen.getByLabelText('Start gelijk met')).toHaveValue('')
   })
 })
 
@@ -144,10 +155,9 @@ describe('App — integratiepad fase 7 (Overzicht met wachttijd-bewaking)', () =
     maakVerbouwingAan('Lindelaan 14')
 
     const zesDagenGeleden = isoLokaal(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000))
-    const rij = stapRij('Inmeten')
-    fireEvent.click(within(rij).getByRole('button', { name: /Bewerken/ }))
-    fireEvent.change(within(rij).getByLabelText('Benaderd op'), { target: { value: zesDagenGeleden } })
-    fireEvent.click(within(rij).getByRole('button', { name: 'Markeer benaderd' }))
+    openPaneel('Inmeten')
+    fireEvent.change(screen.getByLabelText('Benaderd op'), { target: { value: zesDagenGeleden } })
+    fireEvent.click(screen.getByRole('button', { name: 'Markeer benaderd' }))
 
     fireEvent.click(screen.getByRole('button', { name: '← Terug' }))
     expect(screen.getByText(/geen reactie/)).toBeInTheDocument()
@@ -245,9 +255,9 @@ describe('App — integratiepad fase 9 (Mail verwerken)', () => {
     // Controleer in Planning dat Inmeten nu een 🔒-anker heeft op de toegezegde datum.
     fireEvent.click(screen.getByRole('button', { name: 'overzicht' }))
     fireEvent.click(screen.getByRole('button', { name: 'Bekijk planning' }))
-    const inmetenRij = stapRij('Inmeten')
-    expect(within(inmetenRij).getByText('🔒')).toBeInTheDocument()
-    expect(within(inmetenRij).getByText(/15 mrt 2024|15 maart 2024/)).toBeInTheDocument()
+    openPaneel('Inmeten')
+    expect(screen.getAllByText('🔒').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/15 mrt 2024|15 maart 2024/).length).toBeGreaterThan(0)
   })
 
   it('negeren laat de planning ongemoeid', () => {

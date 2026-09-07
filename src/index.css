@@ -133,16 +133,20 @@ textarea:focus-visible {
   outline-offset: 1px;
 }
 
-/* Herbruikbare rij voor een label + invoer(en) + knop, zoals in StapActies en Beheer. */
+/* Rij voor een label + invoer(en) + knop in StapActies, dat in een smal zijpaneel staat:
+   het label krijgt een eigen regel (flex-basis 100%), de rest wikkelt eronder mee. */
 .veldrij {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .veldrij > span:first-child {
-  width: 150px;
-  flex-shrink: 0;
+  flex: 1 0 100%;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
 /* Uitgeklapt bewerk-paneel: meerdere velden op een rij, doorlopend naar de volgende regel. */
