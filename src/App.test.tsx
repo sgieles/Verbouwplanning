@@ -136,3 +136,65 @@ describe('App — integratiepad fase 7 (Overzicht met wachttijd-bewaking)', () =
     expect(screen.queryByText('Vandaag te doen')).not.toBeInTheDocument()
   })
 })
+
+// Het label van een SubRij in Beheer staat direct (geen <strong>) in een div; closest('div') is
+// dus een no-op op zichzelf. Twee parentElement-stappen omhoog geeft de buitenste rij-container,
+// die zowel de knoppenrij als het (na "Bewerken") uitgeklapte paneel bevat.
+function beheerSubRij(label: string): HTMLElement {
+  return screen.getByText(label).closest('div')!.parentElement!.parentElement!
+}
+
+describe('App — integratiepad fase 8 (Beheer)', () => {
+  it('een nieuwe subactiviteit toevoegen in Beheer verschijnt meteen bij Nieuwe verbouwing', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'beheer' }))
+
+    const schilderThema = screen.getByText('Schilderen & stucen').closest('.kaart') as HTMLElement
+    fireEvent.click(within(schilderThema).getByRole('button', { name: '+ subactiviteit' }))
+    fireEvent.change(within(schilderThema).getByLabelText('Nieuwe subactiviteit label'), {
+      target: { value: 'Kitwerk' },
+    })
+    fireEvent.click(within(schilderThema).getByRole('button', { name: 'Toevoegen' }))
+    expect(within(schilderThema).getByText('Kitwerk')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'overzicht' }))
+    fireEvent.click(screen.getByRole('button', { name: '+ Nieuwe verbouwing' }))
+    fireEvent.click(screen.getByRole('button', { name: /Schilderen & stucen/ })) // thema openklappen
+    expect(screen.getByText('Kitwerk')).toBeInTheDocument()
+  })
+
+  it('een gearchiveerde subactiviteit is niet meer aan te vinken bij Nieuwe verbouwing', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'beheer' }))
+
+    const uitvoerenRij = beheerSubRij('Schilderen & stucen uitvoeren')
+    fireEvent.click(within(uitvoerenRij).getByRole('button', { name: 'Archiveer' }))
+    expect(within(uitvoerenRij).getByText('gearchiveerd')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'overzicht' }))
+    fireEvent.click(screen.getByRole('button', { name: '+ Nieuwe verbouwing' }))
+    fireEvent.click(screen.getByRole('button', { name: /Schilderen & stucen/ })) // thema openklappen
+    expect(screen.queryByText('Schilderen & stucen uitvoeren')).not.toBeInTheDocument()
+    // Het thema zelf heeft nog wel de andere sub, dus blijft zichtbaar.
+    expect(screen.getByText('Opmeten & offerte')).toBeInTheDocument()
+  })
+
+  it('wijzigen van duur van een sub die in gebruik is, vraagt eerst bevestiging', () => {
+    render(<App />)
+    // Maak een verbouwing aan die "Inmeten" gebruikt.
+    fireEvent.click(screen.getByRole('button', { name: '+ Nieuwe verbouwing' }))
+    fireEvent.change(screen.getByLabelText('Adres'), { target: { value: 'Lindelaan 14' } })
+    fireEvent.click(screen.getByRole('button', { name: /planning genereren/ }))
+    fireEvent.click(screen.getByRole('button', { name: '← Terug' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'beheer' }))
+    const inmetenRij = beheerSubRij('Inmeten')
+    fireEvent.click(within(inmetenRij).getByRole('button', { name: 'Bewerken' }))
+    fireEvent.change(within(inmetenRij).getByLabelText('Duur'), { target: { value: '3' } })
+    fireEvent.click(within(inmetenRij).getByRole('button', { name: 'Opslaan' }))
+
+    expect(within(inmetenRij).getByText(/lopende verbouwing/)).toBeInTheDocument()
+    fireEvent.click(within(inmetenRij).getByRole('button', { name: 'Ja, bibliotheek aanpassen' }))
+    expect(within(inmetenRij).getByText(/3d/)).toBeInTheDocument()
+  })
+})

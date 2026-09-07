@@ -1,6 +1,7 @@
 // Fase 5: adres + startdatum + keuze van werkzaamheden. Een aangevinkt hoofdthema neemt
 // standaard alle subactiviteiten mee; opengeklapt kan de gebruiker losse subs uitzetten.
 import { useState } from 'react'
+import { beschikbareThemas } from '../domain/bibliotheek'
 import type { Thema } from '../domain/types'
 import { isoLokaal } from '../domain/werkdagen'
 
@@ -79,7 +80,9 @@ function ThemaRij({
   )
 }
 
-export function NieuweVerbouwing({ bibliotheek, onAanmaken }: Props) {
+export function NieuweVerbouwing({ bibliotheek: volledigeBibliotheek, onAanmaken }: Props) {
+  // Gearchiveerde thema's/subs (fase 8, Beheer) zijn niet meer aanvinkbaar voor nieuwe verbouwingen.
+  const bibliotheek = beschikbareThemas(volledigeBibliotheek)
   const [adres, setAdres] = useState('')
   const [vertrekdatum, setVertrekdatum] = useState(() => isoLokaal(new Date()))
   // Standaard alles aangevinkt: de gebruiker vinkt uit wat niet nodig is, niet andersom.

@@ -8,6 +8,9 @@ export interface Sub {
   duur: number // werkdagen dat de activiteit zelf duurt
   wachttijd: number // werkdagen tussen einde vorige stap en start van deze
   kosten: number // hele euro's; 0 toegestaan
+  // Gearchiveerd = niet meer aanvinkbaar bij een nieuwe verbouwing, maar bestaande woningen
+  // die hem al gebruiken blijven intact (zie CLAUDE.md, fase 8: archiveren i.p.v. verwijderen).
+  gearchiveerd?: boolean
 }
 
 export interface Thema {
@@ -16,6 +19,7 @@ export interface Thema {
   groep: Groep
   volgorde: number // stappen van 10, ruimte om tussen te schuiven
   subs: Sub[]
+  gearchiveerd?: boolean
 }
 
 export type AnkerBron = 'handmatig' | 'bevestigd' | 'verleden'
