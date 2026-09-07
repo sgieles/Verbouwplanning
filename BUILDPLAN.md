@@ -2,9 +2,15 @@
 
 Gefaseerd bouwplan. Lees eerst CLAUDE.md voor de domeincontext en de volledige beschrijving van het datamodel en de planningslogica. Bouw de fasen in volgorde; elke fase is los te testen en op te leveren.
 
+## Status
+
+**Fase 0 t/m 9 zijn afgerond** (rekenkern, persistentie, en alle vijf schermen uit CLAUDE.md). De app is live op **https://sgieles.github.io/Verbouwplanning/**, gedeployd via GitHub Actions (`.github/workflows/deploy.yml`) die bij elke push naar `main` eerst de testsuite en typecheck draait en pas dan publiceert. Daarna is er een polish-ronde geweest (dark mode geverifieerd, gedeelde signaalkleuren, hover/focus-states, een ontbrekende bevestiging vóór hard verwijderen in Beheer) — geen aparte fase, maar wel gedaan.
+
+Open staat alleen **Fase 10**, die wacht op de echte historische data van de gebruiker (zie hieronder).
+
 ---
 
-## Fase 0 — Projectopzet & architectuur
+## Fase 0 — Projectopzet & architectuur ✅
 
 **Doel:** een onderhoudbare basis waarop de rest gebouwd wordt.
 
@@ -17,7 +23,7 @@ Gefaseerd bouwplan. Lees eerst CLAUDE.md voor de domeincontext en de volledige b
 
 **Definitie van klaar:** het project draait, de mappenstructuur staat, en er is een eerste (mag triviale) test die groen draait.
 
-## Fase 1 — Datamodel & werkdagen-fundament
+## Fase 1 — Datamodel & werkdagen-fundament ✅
 
 **Doel:** de bouwstenen waarop alle berekening rust, getypeerd en getest.
 
@@ -30,7 +36,7 @@ Gefaseerd bouwplan. Lees eerst CLAUDE.md voor de domeincontext en de volledige b
 
 **Definitie van klaar:** de helpers hebben tests die weekends en de tijdzone-valkuil afdekken.
 
-## Fase 2 — Planningskern: laag 1 en laag 2
+## Fase 2 — Planningskern: laag 1 en laag 2 ✅
 
 **Doel:** de automatische planning en de harde verankering, als pure functies met een testsuite.
 
@@ -56,7 +62,7 @@ Schrijf de tests met concrete datums, want hier zitten de subtiele fouten:
 
 **Definitie van klaar:** de rekenkern berekent laag 1 en laag 2 correct, met een testsuite die de bovenstaande gevallen en de valkuilen uit CLAUDE.md dekt.
 
-## Fase 3 — Planningskern: laag 3 (parallelliteit op subactiviteit-niveau)
+## Fase 3 — Planningskern: laag 3 (parallelliteit op subactiviteit-niveau) ✅
 
 **Doel:** subactiviteiten kunnen gelijk starten met een andere, met correcte doorwerking naar opvolgers.
 
@@ -82,7 +88,7 @@ Test daarnaast dat een anker op een gekoppelde stap wint van de koppeling, en da
 
 **Definitie van klaar:** het canonieke testgeval slaagt in beide varianten, ankers winnen van koppelingen, en cykels geven een nette fout.
 
-## Fase 4 — Persistentie
+## Fase 4 — Persistentie ✅
 
 **Doel:** verbouwingen en al hun keuzes blijven bewaard tussen sessies.
 
@@ -92,7 +98,7 @@ Test daarnaast dat een anker op een gekoppelde stap wint van de koppeling, en da
 
 **Definitie van klaar:** je maakt een verbouwing aan, zet een datum vast en legt een koppeling, herlaadt de app, en alles staat er nog precies zo.
 
-## Fase 5 — Scherm: Nieuwe verbouwing
+## Fase 5 — Scherm: Nieuwe verbouwing ✅
 
 **Doel:** een verbouwing kunnen aanmaken die meteen een planning oplevert.
 
@@ -102,7 +108,7 @@ Test daarnaast dat een anker op een gekoppelde stap wint van de koppeling, en da
 
 **Definitie van klaar:** een nieuwe verbouwing aanmaken leidt tot een gevulde, doorgerekende planning.
 
-## Fase 6 — Scherm: Planning (de tijdlijn)
+## Fase 6 — Scherm: Planning (de tijdlijn) ✅
 
 **Doel:** het scherm waar de gebruiker de planning ziet en bijstuurt. Dit is het zwaartepunt van de app.
 
@@ -122,7 +128,7 @@ Test daarnaast dat een anker op een gekoppelde stap wint van de koppeling, en da
 
 **Definitie van klaar:** de gebruiker kan alle drie de lagen bedienen vanaf dit scherm, ziet het effect direct in de tijdlijn, en kan de planning vastzetten.
 
-## Fase 7 — Scherm: Overzicht met wachttijd-bewaking
+## Fase 7 — Scherm: Overzicht met wachttijd-bewaking ✅
 
 **Doel:** het dagelijkse monitoring-scherm dat de kernpijn van de gebruiker adresseert — bewaken welke partij actie of opvolging nodig heeft.
 
@@ -133,7 +139,7 @@ Test daarnaast dat een anker op een gekoppelde stap wint van de koppeling, en da
 
 **Definitie van klaar:** de gebruiker opent het overzicht en ziet zonder zoeken welke partijen actie of opvolging nodig hebben, en welke woning daardoor dreigt te vertragen.
 
-## Fase 8 — Scherm: Beheer
+## Fase 8 — Scherm: Beheer ✅
 
 **Doel:** de activiteiten-bibliotheek kan meegroeien zonder lopende verbouwingen te breken.
 
@@ -144,7 +150,7 @@ Test daarnaast dat een anker op een gekoppelde stap wint van de koppeling, en da
 
 **Definitie van klaar:** een nieuw soort werk toevoegen verschijnt meteen bij een nieuwe verbouwing, en archiveren breekt geen bestaande planning.
 
-## Fase 9 — Scherm: Mail verwerken
+## Fase 9 — Scherm: Mail verwerken ✅
 
 **Doel:** de tussenoplossing zonder echte mailkoppeling bruikbaar maken.
 
@@ -155,7 +161,15 @@ Test daarnaast dat een anker op een gekoppelde stap wint van de koppeling, en da
 
 **Definitie van klaar:** een geplakte mail leidt tot een concreet, goed te keuren voorstel dat na goedkeuring correct in de planning landt.
 
-## Fase 10 — Leren uit historie (later)
+## Deployment ✅
+
+Niet in de oorspronkelijke fasering, maar wel gedaan: de app staat live op GitHub Pages
+(**https://sgieles.github.io/Verbouwplanning/**), automatisch gebouwd en gepubliceerd via
+GitHub Actions bij elke push naar `main` (`.github/workflows/deploy.yml`), met de testsuite
+en typecheck als poort — een falende build wordt nooit gepubliceerd. Data blijft per bezoeker
+lokaal in de browser (localStorage); er is geen gedeelde backend.
+
+## Fase 10 — Leren uit historie (later, nog te doen)
 
 **Doel:** de suggesties scherper maken op basis van echte data.
 
@@ -166,7 +180,7 @@ Test daarnaast dat een anker op een gekoppelde stap wint van de koppeling, en da
 
 ## Aanbevolen bouwvolgorde
 
-0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10
+0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 (✅ afgerond) → 10 (open, wacht op echte data)
 
 De rekenkern (fasen 1 t/m 3) komt bewust vóór de schermen. Parallelliteit (fase 3) raakt de planning fundamenteel; die later inbouwen betekent de rekenkern opnieuw omgooien, dus hij hoort direct na de basisberekening. Zodra de kern en persistentie staan, zijn de schermen erop te bouwen. Fase 7 (wachttijd-bewaking) is functioneel de belangrijkste voor de gebruiker en mag naar voren zodra de rekenkern en het overzicht bestaan.
 
