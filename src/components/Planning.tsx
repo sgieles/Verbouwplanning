@@ -127,7 +127,7 @@ export function Planning({ verbouwing, bibliotheek, onTerug, onWerkBij }: Props)
                         </span>
                       )}
                       {stap.wordtBepalendeFactor && (
-                        <span style={{ marginLeft: 8, color: '#c0392b', fontSize: 13 }}>
+                        <span style={{ marginLeft: 8, color: 'var(--kritiek)', fontSize: 13 }}>
                           ⚠ bepaalt nu de planning
                         </span>
                       )}

@@ -58,8 +58,8 @@ export function StapActies({
           className="kaart"
           style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13 }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 150 }}>📌 Startdatum zetten</span>
+          <div className="veldrij">
+            <span>📌 Startdatum zetten</span>
             <input
               type="date"
               aria-label="Startdatum"
@@ -76,8 +76,8 @@ export function StapActies({
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 150 }}>🔒 Bevestigen door partij</span>
+          <div className="veldrij">
+            <span>🔒 Bevestigen door partij</span>
             <input
               type="date"
               aria-label="Toegezegde datum"
@@ -98,8 +98,8 @@ export function StapActies({
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 150 }}>📞 Benaderd op</span>
+          <div className="veldrij">
+            <span>📞 Benaderd op</span>
             <input
               type="date"
               aria-label="Benaderd op"
@@ -119,8 +119,8 @@ export function StapActies({
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 150 }}>Duur bijstellen (werkdagen)</span>
+          <div className="veldrij">
+            <span>Duur bijstellen (werkdagen)</span>
             <input
               type="number"
               aria-label="Duur in werkdagen"
@@ -141,8 +141,8 @@ export function StapActies({
             </button>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 150 }}>Start gelijk met</span>
+          <div className="veldrij">
+            <span>Start gelijk met</span>
             <select
               aria-label="Start gelijk met"
               value={koppelVeld}

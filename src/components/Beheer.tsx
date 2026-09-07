@@ -46,6 +46,7 @@ function SubRij({
   const [wachttijd, setWachttijd] = useState(String(sub.wachttijd))
   const [kosten, setKosten] = useState(String(sub.kosten))
   const [wachtOpBevestiging, setWachtOpBevestiging] = useState(false)
+  const [vraagVerwijderBevestiging, setVraagVerwijderBevestiging] = useState(false)
 
   function huidigeWaarden() {
     return { label, duur: Number(duur), wachttijd: Number(wachttijd), kosten: Number(kosten) }
@@ -80,28 +81,44 @@ function SubRij({
           )}
         </div>
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          <button type="button" className="knop-subtiel" onClick={() => setOpengeklapt((v) => !v)}>
-            {opengeklapt ? 'Sluiten' : 'Bewerken'}
-          </button>
-          {sub.gearchiveerd ? (
-            <button type="button" className="knop-subtiel" onClick={onHeractiveer}>
-              Heractiveer
-            </button>
+          {vraagVerwijderBevestiging ? (
+            <>
+              <span className="tekst-muted" style={{ alignSelf: 'center' }}>
+                Verwijderen kan niet ongedaan gemaakt worden.
+              </span>
+              <button type="button" className="knop-subtiel" onClick={onVerwijder}>
+                Ja, verwijder
+              </button>
+              <button type="button" className="knop-subtiel" onClick={() => setVraagVerwijderBevestiging(false)}>
+                Annuleren
+              </button>
+            </>
           ) : (
-            <button type="button" className="knop-subtiel" onClick={onArchiveer}>
-              Archiveer
-            </button>
-          )}
-          {aantalInGebruik === 0 && (
-            <button type="button" className="knop-subtiel" onClick={onVerwijder}>
-              Verwijder
-            </button>
+            <>
+              <button type="button" className="knop-subtiel" onClick={() => setOpengeklapt((v) => !v)}>
+                {opengeklapt ? 'Sluiten' : 'Bewerken'}
+              </button>
+              {sub.gearchiveerd ? (
+                <button type="button" className="knop-subtiel" onClick={onHeractiveer}>
+                  Heractiveer
+                </button>
+              ) : (
+                <button type="button" className="knop-subtiel" onClick={onArchiveer}>
+                  Archiveer
+                </button>
+              )}
+              {aantalInGebruik === 0 && (
+                <button type="button" className="knop-subtiel" onClick={() => setVraagVerwijderBevestiging(true)}>
+                  Verwijder
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
 
       {opengeklapt && (
-        <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', fontSize: 13 }}>
+        <div className="bewerk-paneel">
           <input aria-label="Label" value={label} onChange={(e) => setLabel(e.target.value)} style={{ width: 180 }} />
           <label>
             Duur{' '}
@@ -177,7 +194,7 @@ function NieuwSubForm({ onToevoegen }: { onToevoegen: (input: { label: string; d
   }
 
   return (
-    <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', fontSize: 13 }}>
+    <div className="bewerk-paneel">
       <input
         aria-label="Nieuwe subactiviteit label"
         placeholder="Naam"
@@ -237,6 +254,7 @@ function ThemaHeader({
   const [label, setLabel] = useState(thema.label)
   const [groep, setGroep] = useState<Groep>(thema.groep)
   const [volgorde, setVolgorde] = useState(String(thema.volgorde))
+  const [vraagVerwijderBevestiging, setVraagVerwijderBevestiging] = useState(false)
 
   return (
     <>
@@ -248,6 +266,17 @@ function ThemaHeader({
           </span>
           {thema.gearchiveerd && <span className="tag" style={{ marginLeft: 8 }}>gearchiveerd</span>}
         </div>
+        {vraagVerwijderBevestiging ? (
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span className="tekst-muted">Verwijdert het hele thema — kan niet ongedaan gemaakt worden.</span>
+            <button type="button" className="knop-subtiel" onClick={onVerwijder}>
+              Ja, verwijder
+            </button>
+            <button type="button" className="knop-subtiel" onClick={() => setVraagVerwijderBevestiging(false)}>
+              Annuleren
+            </button>
+          </div>
+        ) : (
         <div style={{ display: 'flex', gap: 6 }}>
           <button type="button" className="knop-subtiel" onClick={() => setOpengeklapt((v) => !v)}>
             {opengeklapt ? 'Sluiten' : 'Bewerken'}
@@ -262,15 +291,16 @@ function ThemaHeader({
             </button>
           )}
           {kanVerwijderen && (
-            <button type="button" className="knop-subtiel" onClick={onVerwijder}>
+            <button type="button" className="knop-subtiel" onClick={() => setVraagVerwijderBevestiging(true)}>
               Verwijder
             </button>
           )}
         </div>
+        )}
       </div>
 
       {opengeklapt && (
-        <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', fontSize: 13 }}>
+        <div className="bewerk-paneel">
           <input aria-label="Thema label" value={label} onChange={(e) => setLabel(e.target.value)} style={{ width: 200 }} />
           <select aria-label="Thema groep" value={groep} onChange={(e) => setGroep(e.target.value as Groep)}>
             {GROEPEN.map((g) => (

@@ -144,7 +144,6 @@ export function MailVerwerken({ bibliotheek, verbouwingen, onWerkBij }: Props) {
           value={mailTekst}
           onChange={(e) => setMailTekst(e.target.value)}
           placeholder="Plak hier de ontvangen mail…"
-          style={{ font: 'inherit', padding: 8, border: '1px solid var(--border)', borderRadius: 4, background: 'var(--surface)', color: 'var(--text)' }}
           disabled={!verbouwing}
         />
       </div>

@@ -248,3 +248,22 @@ describe('App — integratiepad fase 9 (Mail verwerken)', () => {
     expect(screen.queryByText('✓ Voorstel goedgekeurd en verwerkt in de planning')).not.toBeInTheDocument()
   })
 })
+
+describe('App — polish: verwijderen in Beheer vraagt eerst bevestiging', () => {
+  it('annuleren laat de activiteit staan; bevestigen verwijdert hem echt', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'beheer' }))
+    // 'Meubels plaatsen' (thema Styling) heeft geen naamcollisie met zijn thema-label.
+    const rij = beheerSubRij('Meubels plaatsen')
+
+    fireEvent.click(within(rij).getByRole('button', { name: 'Verwijder' }))
+    expect(within(rij).getByText(/kan niet ongedaan gemaakt worden/)).toBeInTheDocument()
+
+    fireEvent.click(within(rij).getByRole('button', { name: 'Annuleren' }))
+    expect(screen.getByText('Meubels plaatsen')).toBeInTheDocument()
+
+    fireEvent.click(within(rij).getByRole('button', { name: 'Verwijder' }))
+    fireEvent.click(within(rij).getByRole('button', { name: 'Ja, verwijder' }))
+    expect(screen.queryByText('Meubels plaatsen')).not.toBeInTheDocument()
+  })
+})

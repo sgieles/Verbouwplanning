@@ -48,7 +48,7 @@ function StatusMarkering({ signalen }: { signalen: Signaal[] }) {
   }
   const kritiek = signalen.some((s) => s.beinvloedtOplevering)
   return (
-    <span style={{ color: kritiek ? '#c0392b' : '#c9a227' }}>
+    <span style={{ color: kritiek ? 'var(--kritiek)' : 'var(--waarschuwing)' }}>
       ● wacht op reactie{kritiek ? ' — dit vertraagt de oplevering' : ''}
     </span>
   )
@@ -107,7 +107,7 @@ export function Overzicht({ verbouwingen, bibliotheek, onNieuw, onBekijk }: Prop
                 style={{
                   textAlign: 'left',
                   border: '1px solid var(--border)',
-                  borderLeft: `4px solid ${signaal.beinvloedtOplevering ? '#c0392b' : '#c9a227'}`,
+                  borderLeft: `4px solid ${signaal.beinvloedtOplevering ? 'var(--kritiek)' : 'var(--waarschuwing)'}`,
                   borderRadius: 4,
                   padding: '8px 12px',
                   background: 'var(--surface)',

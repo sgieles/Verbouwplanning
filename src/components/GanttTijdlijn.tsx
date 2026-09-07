@@ -148,7 +148,7 @@ export function GanttTijdlijn({ themasMetStappen, vanaf, totEnMet, labelVoorSub 
                 {stappen.map((stap) => {
                   const pos = positie(stap.start, stap.eind, vanafDatum)
                   const kleur = stap.wordtBepalendeFactor
-                    ? '#c0392b'
+                    ? 'var(--kritiek)'
                     : stap.vast
                       ? 'var(--accent)'
                       : 'color-mix(in srgb, var(--accent) 55%, var(--surface))'
@@ -180,7 +180,7 @@ export function GanttTijdlijn({ themasMetStappen, vanaf, totEnMet, labelVoorSub 
                       >
                         {stap.gelijkMetSubId && <span className="tag">gelijk met {labelVoorSub(stap.gelijkMetSubId)}</span>}
                         {stap.wordtBepalendeFactor && (
-                          <span style={{ color: '#c0392b' }}>⚠ bepaalt nu de planning</span>
+                          <span style={{ color: 'var(--kritiek)' }}>⚠ bepaalt nu de planning</span>
                         )}
                       </div>
                     </div>

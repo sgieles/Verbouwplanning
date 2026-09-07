@@ -6,6 +6,10 @@
   --surface: #ffffff;
   --border: #e2e2e6;
   --accent: #2f5d50;
+  --accent-hover: #24493f;
+  /* Signaalkleuren voor status/waarschuwingen (Overzicht, Planning, Gantt) — één bron, dark-mode-bewust. */
+  --kritiek: #c0392b;
+  --waarschuwing: #a67a00;
 
   color-scheme: light dark;
   font: 15px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -22,6 +26,9 @@
     --surface: #1a1a1d;
     --border: #2c2c31;
     --accent: #7cbfa9;
+    --accent-hover: #97d3bf;
+    --kritiek: #e0665a;
+    --waarschuwing: #d4af37;
   }
 }
 
@@ -55,16 +62,28 @@ h3 {
   color: var(--text-muted);
 }
 
-.veld input[type='text'],
-.veld input[type='date'],
-.veld input[type='number'],
-.veld select {
+/* Niet aan .veld gebonden: een <select> of <input> ergens los op de pagina (Beheer, StapActies,
+   Mail verwerken) moet er hetzelfde uitzien als een veld-invoer, niet als browser-standaard. */
+input[type='text'],
+input[type='date'],
+input[type='number'],
+select,
+textarea {
   font: inherit;
   padding: 7px 9px;
   border: 1px solid var(--border);
   border-radius: 4px;
   background: var(--surface);
   color: var(--text);
+}
+
+input[type='text']:focus-visible,
+input[type='date']:focus-visible,
+input[type='number']:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .knop {
@@ -76,6 +95,11 @@ h3 {
   background: var(--accent);
   color: #fff;
   cursor: pointer;
+}
+
+.knop:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 .knop:disabled {
@@ -91,6 +115,64 @@ h3 {
   background: transparent;
   color: var(--text);
   cursor: pointer;
+}
+
+.knop-subtiel:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.knop-subtiel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.knop:focus-visible,
+.knop-subtiel:focus-visible,
+.nav-knop:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Herbruikbare rij voor een label + invoer(en) + knop, zoals in StapActies en Beheer. */
+.veldrij {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.veldrij > span:first-child {
+  width: 150px;
+  flex-shrink: 0;
+}
+
+/* Uitgeklapt bewerk-paneel: meerdere velden op een rij, doorlopend naar de volgende regel. */
+.bewerk-paneel {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.nav-knop {
+  font: inherit;
+  font-weight: 600;
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+}
+
+.nav-knop:hover {
+  color: var(--heading);
+}
+
+.nav-knop[aria-current='page'] {
+  border-bottom-color: var(--accent);
+  color: var(--heading);
 }
 
 .kaart {

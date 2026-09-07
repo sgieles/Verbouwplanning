@@ -28,18 +28,10 @@ function Nav({ actief, onKies }: { actief: NavScherm | null; onKies: (scherm: Na
         <button
           key={scherm}
           type="button"
+          className="nav-knop"
+          aria-current={actief === scherm ? 'page' : undefined}
           onClick={() => onKies(scherm)}
-          style={{
-            font: 'inherit',
-            fontWeight: 600,
-            padding: '6px 12px',
-            border: 'none',
-            borderBottom: actief === scherm ? '2px solid var(--accent)' : '2px solid transparent',
-            background: 'none',
-            color: actief === scherm ? 'var(--heading)' : 'var(--text-muted)',
-            cursor: 'pointer',
-            textTransform: 'capitalize',
-          }}
+          style={{ textTransform: 'capitalize' }}
         >
           {NAV_LABEL[scherm]}
         </button>
