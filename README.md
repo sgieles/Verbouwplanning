@@ -1,32 +1,24 @@
-# React + TypeScript + Vite
+# Verbouwplanning — Verbouwmonitor
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Web-app die het verbouwproces van huurwoningen monitort: in één oogopslag zien waar elke
+verbouwing in het proces zit, wat de verwachte opleverdatum is en wat de kosten zijn.
 
-Currently, two official plugins are available:
+Zie [CLAUDE.md](./CLAUDE.md) voor de volledige domeincontext (datamodel, de drie planninglagen,
+ontwerpprincipes) en [BUILDPLAN.md](./BUILDPLAN.md) voor het gefaseerde bouwplan.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Status
 
-## React Compiler
+Rekenkern (fase 0 t/m 3 van BUILDPLAN.md) staat: datamodel, werkdagen-helpers, en de planning
+inclusief verankering (📌/🔒/✓) en parallelliteit op subactiviteit-niveau ("start gelijk met").
+De schermen (Overzicht, Nieuwe verbouwing, Planning, Beheer, Mail verwerken) en persistentie
+volgen in de fasen daarna.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Ontwikkelen
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev      # start de dev-server
+npm test         # draait de testsuite (Vitest) eenmalig
+npm run test:watch
+npm run build     # typecheck + productiebuild
 ```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
