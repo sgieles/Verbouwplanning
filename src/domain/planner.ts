@@ -1,6 +1,6 @@
-// De rekenkern: Laag 1 (basisvolgorde) + Laag 2 (verankering).
-// Laag 3 (parallelliteit op subactiviteit-niveau) komt in fase 3 — zie BUILDPLAN.md — en zit hier nog niet in.
-import type { Anker, GeplandeSub, Sub, Thema } from './types'
+// De rekenkern: Laag 1 (basisvolgorde), Laag 2 (verankering) en Laag 3 (parallelliteit).
+// Zie CLAUDE.md voor de volledige definitie van de drie lagen.
+import type { Anker, GeplandeSub, ParallelKoppelingen, Sub, Thema } from './types'
 import { eerstvolgendeWerkdag, isoLokaal, parseIsoLokaal, voegWerkdagenToe } from './werkdagen'
 
 export interface PlanningInvoer {
@@ -8,79 +8,130 @@ export interface PlanningInvoer {
   geselecteerdeSubIds: string[]
   vertrekdatumHuurder: string // isoLokaal
   ankers: Record<string, Anker>
+  /** "Start gelijk met" per verbouwing (Laag 3). Optioneel — leeg is een puur seriële keten. */
+  parallelKoppelingen?: ParallelKoppelingen
   vandaag: string // isoLokaal — expliciet meegeven i.p.v. `new Date()` zodat de functie puur en testbaar blijft
 }
 
-interface SubMetThema {
-  sub: Sub
-  themaId: string
+/** Gegooid wanneer "start gelijk met"-koppelingen een cyclus vormen (bijv. A gelijk met B, B gelijk met A). */
+export class PlanningCyclusFout extends Error {
+  constructor(subId: string) {
+    super(`Cyclus gedetecteerd in "start gelijk met"-koppelingen bij subactiviteit "${subId}".`)
+    this.name = 'PlanningCyclusFout'
+  }
 }
 
-function geselecteerdeSubsInVolgorde(
-  bibliotheek: Thema[],
-  geselecteerdeSubIds: string[],
-): SubMetThema[] {
+interface SubEntry {
+  sub: Sub
+  themaId: string
+  chainVoorgangerId?: string
+}
+
+function bouwSubEntries(bibliotheek: Thema[], geselecteerdeSubIds: string[]): Map<string, SubEntry> {
   const geselecteerd = new Set(geselecteerdeSubIds)
-  return [...bibliotheek]
+  const inVolgorde = [...bibliotheek]
     .sort((a, b) => a.volgorde - b.volgorde)
     .flatMap((thema) =>
-      thema.subs
-        .filter((sub) => geselecteerd.has(sub.id))
-        .map((sub) => ({ sub, themaId: thema.id })),
+      thema.subs.filter((sub) => geselecteerd.has(sub.id)).map((sub) => ({ sub, themaId: thema.id })),
     )
+
+  const entries = new Map<string, SubEntry>()
+  let vorigeId: string | undefined
+  for (const { sub, themaId } of inVolgorde) {
+    entries.set(sub.id, { sub, themaId, chainVoorgangerId: vorigeId })
+    vorigeId = sub.id
+  }
+  return entries
 }
 
 /**
- * Rekent de seriële keten door: elke stap start na (einde vorige + eigen wachttijd),
- * tenzij er een anker (handmatig/bevestigd/verleden) is — dan geldt Laag 2 en schuift de rest mee.
- * Een niet-verankerde stap landt nooit vóór vandaag (geklemd op de eerstvolgende werkdag).
+ * Rekent de volledige planning door: Laag 1 (seriële keten), Laag 2 (ankers winnen altijd)
+ * en Laag 3 ("start gelijk met" — een gekoppelde stap neemt de startdatum van zijn koppel-stap
+ * over; zijn eigen opvolger blijft gewoon wachten op zijn werkelijke einddatum).
+ *
+ * De startdatum van elke stap volgt uit topologische afhandeling van drie mogelijke bronnen,
+ * in deze prioriteit: hard anker > "start gelijk met"-koppeling > voorganger in de keten.
  */
 export function berekenPlanning(invoer: PlanningInvoer): GeplandeSub[] {
-  const subs = geselecteerdeSubsInVolgorde(invoer.bibliotheek, invoer.geselecteerdeSubIds)
+  const entries = bouwSubEntries(invoer.bibliotheek, invoer.geselecteerdeSubIds)
+  const koppelingen = invoer.parallelKoppelingen ?? {}
   const vandaag = parseIsoLokaal(invoer.vandaag)
   const ondergrens = eerstvolgendeWerkdag(vandaag)
+  const vertrekdatum = parseIsoLokaal(invoer.vertrekdatumHuurder)
 
-  let cursor = parseIsoLokaal(invoer.vertrekdatumHuurder)
-  const resultaat: GeplandeSub[] = []
+  const opgelost = new Map<string, { start: Date; eind: Date }>()
+  const inBewerking = new Set<string>()
 
-  for (const { sub, themaId } of subs) {
-    const anker = invoer.ankers[sub.id]
+  function los(subId: string): { start: Date; eind: Date } {
+    const bestaand = opgelost.get(subId)
+    if (bestaand) return bestaand
+
+    if (inBewerking.has(subId)) {
+      throw new PlanningCyclusFout(subId)
+    }
+    inBewerking.add(subId)
+
+    const entry = entries.get(subId)
+    if (!entry) {
+      throw new Error(`Onbekende subactiviteit-id in koppeling: "${subId}"`)
+    }
+
+    const anker = invoer.ankers[subId]
+    const gelijkMetId = koppelingen[subId]
+    const gelijkMetTarget = gelijkMetId && entries.has(gelijkMetId) ? gelijkMetId : undefined
+
     let start: Date
-    let ankerBron = anker?.bron
-
     if (anker) {
-      // Laag 2: een anker staat muurvast, ongeacht wat de keten zou voorstellen.
+      // Laag 2: een anker staat muurvast en wint van elke koppeling.
       start = parseIsoLokaal(anker.datum)
+    } else if (gelijkMetTarget) {
+      // Laag 3: neem de startdatum over van de gekoppelde stap.
+      start = los(gelijkMetTarget).start
     } else {
-      // Laag 1: start = einde vorige stap + eigen wachttijd (geen extra dag).
-      const voorgesteld = voegWerkdagenToe(cursor, sub.wachttijd)
+      // Laag 1: start = einde vorige stap in de keten + eigen wachttijd (geen extra dag).
+      const basis = entry.chainVoorgangerId ? los(entry.chainVoorgangerId).eind : vertrekdatum
+      const voorgesteld = voegWerkdagenToe(basis, entry.sub.wachttijd)
       start = voorgesteld.getTime() > ondergrens.getTime() ? voorgesteld : ondergrens
     }
 
-    const eind = voegWerkdagenToe(start, Math.max(sub.duur, 1) - 1)
+    const eind = voegWerkdagenToe(start, Math.max(entry.sub.duur, 1) - 1)
+
+    inBewerking.delete(subId)
+    const resultaat = { start, eind }
+    opgelost.set(subId, resultaat)
+    return resultaat
+  }
+
+  const resultaat: GeplandeSub[] = []
+  for (const [subId, entry] of entries) {
+    const { start, eind } = los(subId)
+    const anker = invoer.ankers[subId]
+    const gelijkMetId = koppelingen[subId]
+    const gelijkMetTarget = gelijkMetId && entries.has(gelijkMetId) ? gelijkMetId : undefined
+
+    let ankerBron = anker?.bron
     const inHetVerleden = !anker && eind.getTime() < vandaag.getTime()
     if (inHetVerleden) {
       ankerBron = 'verleden'
     }
 
     resultaat.push({
-      subId: sub.id,
-      themaId,
-      label: sub.label,
+      subId,
+      themaId: entry.themaId,
+      label: entry.sub.label,
       start: isoLokaal(start),
       eind: isoLokaal(eind),
       vast: Boolean(anker) || inHetVerleden,
       ankerBron,
-      kosten: sub.kosten,
+      gelijkMetSubId: gelijkMetTarget,
+      kosten: entry.sub.kosten,
     })
-
-    cursor = eind
   }
 
   return resultaat
 }
 
-/** Einde van de seriële keten — niet zomaar het laatste array-element (fase 3 voegt parallelsporen toe die eerder klaar kunnen zijn). */
+/** Einde van de keten — het maximale einde over alle stappen (parallelsporen kunnen eerder klaar zijn). */
 export function opleverdatum(geplande: GeplandeSub[]): string | undefined {
   if (geplande.length === 0) return undefined
   return geplande.reduce((laatste, stap) => (stap.eind > laatste ? stap.eind : laatste), geplande[0].eind)
