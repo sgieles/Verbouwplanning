@@ -106,6 +106,23 @@ describe('App — integratiepad fase 6 (Planning-scherm bedienen)', () => {
     expect(screen.getByText('✓ vastgezet')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Planning is vastgezet' })).toBeDisabled()
   })
+
+  it('klikken op de subactiviteit-rij in de Gantt opent hetzelfde bewerkpaneel als de lijst eronder', () => {
+    render(<App />)
+    maakVerbouwingAan('Lindelaan 14')
+
+    // De Gantt-rij (label-kolom) heeft dezelfde naam als de detaillijst-rij ("Inmeten"); de
+    // detaillijst gebruikt <strong>, de Gantt-rij is een <button> met die tekst als naam.
+    fireEvent.click(screen.getByRole('button', { name: 'Inmeten' }))
+
+    const rij = stapRij('Inmeten')
+    expect(within(rij).getByRole('button', { name: /Sluiten/ })).toBeInTheDocument()
+    expect(within(rij).getByLabelText('Startdatum')).toBeInTheDocument()
+
+    // Nogmaals klikken op de Gantt-rij sluit het paneel weer (toggle).
+    fireEvent.click(screen.getByRole('button', { name: 'Inmeten' }))
+    expect(within(rij).getByRole('button', { name: /Bewerken/ })).toBeInTheDocument()
+  })
 })
 
 describe('App — integratiepad fase 7 (Overzicht met wachttijd-bewaking)', () => {

@@ -9,6 +9,9 @@ interface Props {
   effectieveSub: Sub
   koppelOpties: { id: string; label: string }[]
   benaderdOp?: string
+  /** Open/dicht wordt in Planning.tsx bijgehouden, zodat ook een klik op de Gantt-rij hetzelfde paneel opent. */
+  opengeklapt: boolean
+  onToggle: () => void
   onZetAnker: (bron: 'handmatig' | 'bevestigd', datum: string) => void
   onVerwijderAnker: () => void
   onZetDuur: (duur: number) => void
@@ -23,6 +26,8 @@ export function StapActies({
   effectieveSub,
   koppelOpties,
   benaderdOp,
+  opengeklapt,
+  onToggle,
   onZetAnker,
   onVerwijderAnker,
   onZetDuur,
@@ -31,7 +36,6 @@ export function StapActies({
   onZetBenaderdOp,
   onVerwijderBenaderdOp,
 }: Props) {
-  const [opengeklapt, setOpengeklapt] = useState(false)
   const [startdatumVeld, setStartdatumVeld] = useState(stap.start)
   const [bevestigdatumVeld, setBevestigdatumVeld] = useState(stap.start)
   const [duurVeld, setDuurVeld] = useState(String(effectieveSub.duur))
@@ -49,7 +53,7 @@ export function StapActies({
 
   return (
     <div>
-      <button type="button" className="knop-subtiel" onClick={() => setOpengeklapt((v) => !v)}>
+      <button type="button" className="knop-subtiel" onClick={onToggle}>
         {opengeklapt ? 'Sluiten ▴' : 'Bewerken ▾'}
       </button>
 

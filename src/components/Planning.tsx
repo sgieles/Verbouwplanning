@@ -1,5 +1,6 @@
 // Fase 6 — het zwaartepunt van de app: de tijdlijn tonen én alle drie de lagen bedienen
 // (📌/🔒 zetten, duur bijstellen, "start gelijk met" koppelen) en de planning accorderen.
+import { useRef, useState } from 'react'
 import { berekenPlanning, opleverdatum, subIdsInKetenVolgorde, totaleKosten } from '../domain/planner'
 import type { Sub, Thema, Verbouwing } from '../domain/types'
 import {
@@ -34,6 +35,27 @@ export function Planning({ verbouwing, bibliotheek, onTerug, onWerkBij }: Props)
   const effectief = effectieveBibliotheek(bibliotheek, verbouwing.overrides)
   const subsById = new Map<string, Sub>(effectief.flatMap((thema) => thema.subs.map((sub) => [sub.id, sub])))
   const vandaag = isoLokaal(new Date())
+
+  // Eén gedeelde open/dicht-state: een klik op de Gantt-rij en de "Bewerken"-knop in de lijst
+  // eronder sturen hetzelfde paneel aan, zodat je vanuit de tijdlijn zelf kunt bewerken.
+  const [opengeklapt, setOpengeklapt] = useState<Set<string>>(new Set())
+  const rijRefs = useRef(new Map<string, HTMLDivElement>())
+
+  function toggleStap(subId: string) {
+    setOpengeklapt((vorige) => {
+      const nieuw = new Set(vorige)
+      if (nieuw.has(subId)) {
+        nieuw.delete(subId)
+      } else {
+        nieuw.add(subId)
+        // Scroll de bijbehorende rij in de lijst in beeld — die kan onder de Gantt uit beeld staan.
+        requestAnimationFrame(() => {
+          rijRefs.current.get(subId)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        })
+      }
+      return nieuw
+    })
+  }
 
   const planning = berekenPlanning({
     bibliotheek: effectief,
@@ -96,6 +118,8 @@ export function Planning({ verbouwing, bibliotheek, onTerug, onWerkBij }: Props)
             vanaf={planning.reduce((min, p) => (p.start < min ? p.start : min), planning[0].start)}
             totEnMet={oplevering ?? planning[0].start}
             labelVoorSub={labelVoorSub}
+            opengeklapt={opengeklapt}
+            onKlikStap={toggleStap}
           />
         </div>
       )}
@@ -113,7 +137,14 @@ export function Planning({ verbouwing, bibliotheek, onTerug, onWerkBij }: Props)
                 .map((id) => ({ id, label: labelVoorSub(id) }))
 
               return (
-                <div key={stap.subId} style={{ borderBottom: '1px solid var(--border)', paddingBottom: 10 }}>
+                <div
+                  key={stap.subId}
+                  ref={(el) => {
+                    if (el) rijRefs.current.set(stap.subId, el)
+                    else rijRefs.current.delete(stap.subId)
+                  }}
+                  style={{ borderBottom: '1px solid var(--border)', paddingBottom: 10 }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                     <div>
                       <strong>{stap.label}</strong>{' '}
@@ -141,6 +172,8 @@ export function Planning({ verbouwing, bibliotheek, onTerug, onWerkBij }: Props)
                       effectieveSub={effectieveSub}
                       koppelOpties={koppelOpties}
                       benaderdOp={verbouwing.benaderdOp[stap.subId]}
+                      opengeklapt={opengeklapt.has(stap.subId)}
+                      onToggle={() => toggleStap(stap.subId)}
                       onZetAnker={(bron, datum) => onWerkBij((v) => zetAnker(v, stap.subId, { bron, datum }))}
                       onVerwijderAnker={() => onWerkBij((v) => verwijderAnker(v, stap.subId))}
                       onZetDuur={(duur) => onWerkBij((v) => zetOverride(v, stap.subId, { duur }))}

@@ -1,6 +1,7 @@
-// Puur visuele tijdlijn: positioneert balken op kalenderdagen. Geen bewerkacties hier —
-// die zitten in de uitklapbare rij per stap in Planning.tsx. Zie CLAUDE.md: de Gantt is de
-// held van het planning-scherm, dus rustig en dicht, geen drag-and-drop.
+// Puur visuele tijdlijn: positioneert balken op kalenderdagen. Klikken op een subactiviteit-rij
+// (label- of tijdlijnkant) opent hetzelfde bewerkpaneel als de "Bewerken"-knop in de lijst
+// eronder — geen aparte editor hier, wel dezelfde trigger. Zie CLAUDE.md: de Gantt is de held
+// van het planning-scherm, dus rustig en dicht, geen drag-and-drop.
 import type { GeplandeSub, Thema } from '../domain/types'
 import { dagenTussen, formatteerDatumLeesbaar, parseIsoLokaal } from '../domain/werkdagen'
 
@@ -21,6 +22,9 @@ interface Props {
   vanaf: string // isoLokaal — linkerrand van de tijdlijn
   totEnMet: string // isoLokaal — rechterrand van de tijdlijn
   labelVoorSub: (subId: string) => string
+  /** subId's waarvan het bewerkpaneel nu openstaat — voor de "actief"-markering op de rij. */
+  opengeklapt: Set<string>
+  onKlikStap: (subId: string) => void
 }
 
 function positie(startIso: string, eindIso: string, vanaf: Date) {
@@ -57,7 +61,7 @@ function MaandKoppen({ vanaf, totEnMet }: { vanaf: Date; totEnMet: Date }) {
   )
 }
 
-export function GanttTijdlijn({ themasMetStappen, vanaf, totEnMet, labelVoorSub }: Props) {
+export function GanttTijdlijn({ themasMetStappen, vanaf, totEnMet, labelVoorSub, opengeklapt, onKlikStap }: Props) {
   const vanafDatum = parseIsoLokaal(vanaf)
   const totEnMetDatum = parseIsoLokaal(totEnMet)
   const dagenSpan = Math.min(Math.max(dagenTussen(vanafDatum, totEnMetDatum) + 1, 1), MAX_DAGEN_BREEDTE)
@@ -84,8 +88,11 @@ export function GanttTijdlijn({ themasMetStappen, vanaf, totEnMet, labelVoorSub 
               {thema.label}
             </div>
             {stappen.map((stap) => (
-              <div
+              <button
                 key={stap.subId}
+                type="button"
+                className={opengeklapt.has(stap.subId) ? 'gantt-rij actief' : 'gantt-rij'}
+                onClick={() => onKlikStap(stap.subId)}
                 style={{
                   height: 28,
                   display: 'flex',
@@ -101,7 +108,7 @@ export function GanttTijdlijn({ themasMetStappen, vanaf, totEnMet, labelVoorSub 
               >
                 {stap.ankerBron && <span style={{ marginRight: 4 }}>{ANKER_MARKERING[stap.ankerBron]}</span>}
                 {stap.label}
-              </div>
+              </button>
             ))}
           </div>
         ))}
@@ -153,7 +160,13 @@ export function GanttTijdlijn({ themasMetStappen, vanaf, totEnMet, labelVoorSub 
                       ? 'var(--accent)'
                       : 'color-mix(in srgb, var(--accent) 55%, var(--surface))'
                   return (
-                    <div key={stap.subId} style={{ height: 28, position: 'relative', borderBottom: '1px solid var(--border)' }}>
+                    <button
+                      key={stap.subId}
+                      type="button"
+                      className={opengeklapt.has(stap.subId) ? 'gantt-rij actief' : 'gantt-rij'}
+                      onClick={() => onKlikStap(stap.subId)}
+                      style={{ height: 28, position: 'relative', borderBottom: '1px solid var(--border)' }}
+                    >
                       <div
                         style={{
                           position: 'absolute',
@@ -183,7 +196,7 @@ export function GanttTijdlijn({ themasMetStappen, vanaf, totEnMet, labelVoorSub 
                           <span style={{ color: 'var(--kritiek)' }}>⚠ bepaalt nu de planning</span>
                         )}
                       </div>
-                    </div>
+                    </button>
                   )
                 })}
               </div>

@@ -155,6 +155,27 @@ textarea:focus-visible {
   font-size: 13px;
 }
 
+/* Een klikbare subactiviteit-rij in de Gantt (label- of tijdlijnkant): opent het bewerkpaneel. */
+.gantt-rij {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.gantt-rij.actief {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+}
+
+.gantt-rij:hover {
+  background: var(--border);
+}
+
 .nav-knop {
   font: inherit;
   font-weight: 600;
